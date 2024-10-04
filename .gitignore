@@ -1,4 +1,5 @@
 # Logs
+logs/
 logs
 *.log
 npm-debug.log*
@@ -9,6 +10,9 @@ lerna-debug.log*
 
 # Diagnostic reports (https://nodejs.org/api/report.html)
 report.[0-9]*.[0-9]*.[0-9]*.[0-9]*.json
+
+# MongoDB Atlas config (if stored locally)
+*.pem
 
 # Runtime data
 pids
@@ -41,6 +45,7 @@ build/Release
 # Dependency directories
 node_modules/
 jspm_packages/
+npm-debug.log
 
 # Snowpack dependency directory (https://snowpack.dev/)
 web_modules/
@@ -50,6 +55,39 @@ web_modules/
 
 # Optional npm cache directory
 .npm
+
+# JWT keys (if using any local key files)
+*.jwt
+
+# Debug files from Postman or other tools
+.postman/
+
+# Operating system files
+.DS_Store
+Thumbs.db
+
+# Optional: If using editor-specific settings
+.idea/
+.vscode/
+
+# Build output
+dist/
+build/
+
+# Coverage directories used by testing tools
+coverage/
+
+# Temporary files
+tmp/
+temp/
+
+# Optional: If using Docker (can be modified based on your Docker setup)
+docker-compose.yml
+Dockerfile
+.dockerignore
+
+# Optional: If using Redis locally (though you're using MongoDB, this might be needed in a future setup)
+dump.rdb
 
 # Optional eslint cache
 .eslintcache

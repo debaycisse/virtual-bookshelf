@@ -1,0 +1,23 @@
+{
+  "name": "virtual-bookshelf",
+  "version": "1.0.0",
+  "description": "An API system that manages the lifecycle of a virtual bookshelf",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/debaycisse/virtual-bookshelf.git"
+  },
+  "author": "Azeez Adebayo <debaycisse@gmail.com>",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/debaycisse/virtual-bookshelf/issues"
+  },
+  "homepage": "https://github.com/debaycisse/virtual-bookshelf#readme",
+  "dependencies": {
+    "express": "^4.21.0",
+    "mongodb": "^6.9.0"
+  }
+}
