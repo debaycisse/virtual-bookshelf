@@ -1,32 +1,31 @@
-import { expect } from 'chai';
-import request from 'supertest';
-import app from '../server';
+const { expect } = require('chai');
+const request = require('request');
+const app = require('../../server');
 
-const serverUrl = 'http://127.0.0.1:5000';
+const serverUrl = 'http://127.0.0.1:5000/api/v1/status';
 
 describe('Virtual Bookshelf Endpoint Server Testing', () => {
-
-  it('should confirm that the server is available', async () => {
-    const response = await request(app)
-      .get(serverUrl)
-      .send();
-
-    expect(response.body).to.include({ status: 'available' });
+  it('should confirm that the server is available', (done) => {
+    request.get(serverUrl, (err, res, body) => {
+      if (err) return done(err);
+      expect(body).to.include("server is available");
+      done();
+    });    
   });
 
-  it('should confirm that the server has HTTP status 200', async () => {
-    const response = await request(app)
-      .get(serverUrl)
-      .send();
-
-    expect(response.status).to.equal(200);
+  it('should confirm that the server has HTTP status 200', (done) => {
+    request.get(serverUrl, (err, res, body) => {
+      if (err) return done(err);
+      expect(res.statusCode === 200).to.be.true;
+      done();
+    });
   });
 
-  it('should confirm that returned content is JSON', async () => {
-    const response = await request(app)
-      .get(serverUrl)
-      .send();
-
-    expect(response.header('content-type')).to.includes('application/json');
+  it('should confirm that returned content is JSON', (done) => {
+    request.get(serverUrl, (err, res, body) => {
+      if (err) return done(err);
+      expect(res.headers['content-type']).to.include('application/json');
+      done();
+    });
   });
 });
