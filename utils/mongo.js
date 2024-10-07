@@ -9,7 +9,8 @@ class MongoDBClient {
     this.mongoClient.connect()
       .then(() => {
         this.isConnected = true;
-        console.log(`MongoDB is connected`)
+        this.db = this.mongoClient.db('bookShelves');
+        console.log(`MongoDB is connected`);
       })
       .catch((err) => {
         this.isConnected = false;
@@ -19,6 +20,26 @@ class MongoDBClient {
 
   isAvailable() {
     return this.isConnected;
+  }
+
+  async userCollection() {
+    const userCol = await this.db.collection('users');
+    return userCol;
+  }
+
+  async shelfCollection() {
+    const shelfCol = await this.db.collection('shelfs');
+    return shelfCol;
+  }
+
+  async categoryCollection() {
+    const categoryCol = await this.db.collection('categories');
+    return categoryCol;
+  }
+
+  async bookCollection() {
+    const bookCol = await this.db.collection('books');
+    return bookCol;
   }
 }
 
