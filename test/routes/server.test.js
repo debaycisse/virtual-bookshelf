@@ -1,6 +1,5 @@
 const { expect } = require('chai');
 const request = require('request');
-const app = require('../../server');
 
 const serverUrl = 'http://127.0.0.1:5000/api/v1/status';
 
