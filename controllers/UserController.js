@@ -35,6 +35,7 @@ class UserController{
       name,
       email,
       password: hashedPwd,
+      dateCreated: new Date().toUTCString(),
     };
     const newUserDoc = await Utils.storeDoc(docType, userObj);
     if (!newUserDoc) {
@@ -45,7 +46,7 @@ class UserController{
     }
     return res.status(201).json({
       message: 'user created successfully',
-      dateCreated: newUserDoc.dateCreated.toUTCString(),
+      dateCreated: newUserDoc.dateCreated,
       loginEndpoint: 'http://127.0.0.1:5000/api/v1/user/login',
     });
   }

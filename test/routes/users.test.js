@@ -7,7 +7,7 @@ const app = require('../../server');
 
 chai.use(chaiHttp);
 const { expect } = chai;
-const serverUrl = 'http://127.0.0.1:5000/api/v1/user/register';
+const serverBaseUrl = 'http://127.0.0.1:5000/api/v1';
 
 describe('User Authentication Endpoints Testing', () => {
   describe('Tests User Registration Endpoint', () => {
@@ -15,7 +15,7 @@ describe('User Authentication Endpoints Testing', () => {
     let postData;
     before(() => {
       postData = {
-        url: serverUrl,
+        url: `${serverBaseUrl}/user/register`,
         form: {
           name: 'Azeez Adebayo',
           email: 'azeez@gmail.com',
@@ -65,5 +65,37 @@ describe('User Authentication Endpoints Testing', () => {
         done();
       });
     });
+  });
+
+  describe('Tests User\'s Login Endpoint', () => {
+    let stub;
+    let postData;
+    before(() => {
+      postData = {
+        url: `${serverBaseUrl}/user/login`,
+        form: {
+          email: 'azeez@gmail.com',
+          password: 'DocMong%4$%123',
+        },
+      };
+    });
+
+    beforeEach(() => {
+      stub = sinon.stub(UserController, 'login')
+        .callsFake((req, res) => {
+          res.set('Content-Type', 'application/json');
+          res.status(200).send({
+            message: 'user created successfully',
+            dateCreated: new Date().toUTCString(),
+            loginEndpoint: 'http://127.0.0.1:5000/api/v1/user/login',
+          });
+        });
+
+    });
+
+    afterEach(() => {
+      stub.restore();
+    });
+
   });
 });

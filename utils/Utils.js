@@ -39,7 +39,7 @@ class Utils {
       if (insertedDoc) {
         return {
           id: insertedDoc.insertedId || insertedDoc._id,
-          dateCreated: new Date(),
+          dateCreated: insertedDoc.ops[0].dateCreated,
         };
       }
       return null;
