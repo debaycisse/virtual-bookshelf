@@ -37,7 +37,6 @@ class Utils {
     try {
       const insertedDoc = await docCollection.insertOne(docObject);
       if (insertedDoc) {
-        console.log(`Executing This Block >>> `)
         return {
           id: insertedDoc.insertedId || insertedDoc._id,
           dateCreated: new Date(),

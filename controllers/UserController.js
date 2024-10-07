@@ -2,7 +2,7 @@ const mongoDbClient = require("../utils/mongo");
 const mime = require('mime-types');
 const Utils = require("../utils/Utils");
 
-class UserAuthentication{
+class UserController{
   static async registerUser(req, res) {
     res.setHeader('Content-Type', mime.contentType('json'));
     const isAvailableMongo = await mongoDbClient.isAvailable();
@@ -41,14 +41,14 @@ class UserAuthentication{
       return res.status(500).json({
         error: 'Internal server error',
         detail: 'New user counld not be created',
-        loginEndpoint: 'http://127.0.0.1:5000/api/v1/user/login',
       });
     }
-    return res.status(200).json({
+    return res.status(201).json({
       message: 'user created successfully',
       dateCreated: newUserDoc.dateCreated.toUTCString(),
+      loginEndpoint: 'http://127.0.0.1:5000/api/v1/user/login',
     });
   }
 }
 
-module.exports = UserAuthentication;
+module.exports = UserController;

@@ -5,7 +5,6 @@ class MongoDBClient {
   constructor() {
     this.mongoClient = new MongoClient(process.env.DB_CON_STR_LOCAL);
     this.isConnected = false;
-
     this.mongoClient.connect()
       .then(() => {
         this.isConnected = true;
