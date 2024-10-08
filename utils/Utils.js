@@ -35,13 +35,15 @@ class Utils {
     } else if (docType === 'shelf') {
       docCollection = await mongoDbClient.shelfCollection();
     }
+    console.log('HERER in Utility')
 
     try {
       const insertedDoc = await docCollection.insertOne(docObject);
+      console.log('NEW USER >> ', insertedDoc)
       if (insertedDoc) {
         return {
           id: insertedDoc.insertedId || insertedDoc._id,
-          dateCreated: insertedDoc.ops[0].dateCreated,
+          acknowledged: insertedDoc.acknowledged,
         };
       }
       return null;
@@ -55,7 +57,9 @@ class Utils {
     try{
       const userCollection = await mongoDbClient.userCollection();
       const user = await userCollection.findOne({ email });
-      if (user) return user;
+      if (user) {
+        return JSON.stringify(user);
+      };
       return null;
     } catch (err) {
       return null;
@@ -64,10 +68,10 @@ class Utils {
 
   static async authenticatesPassword(plainPassword, hashPassword) {
     try {
-      bcrypt.compare(plainPassword, hashPassword, (err, result) => {
+      await bcrypt.compare(plainPassword, hashPassword, (err, result) => {
         if (err) return false;
-        return result;
       });
+      return true;
     } catch (err) {
       return null;
     }
@@ -75,15 +79,14 @@ class Utils {
 
   static async generateToken(userDoc) {
     try {
-      const jwtOption = { expiresIn: '24h', algorithm: 'RS256' };
-      jwt.sign(userDoc, process.env.JWT_SECRET, jwtOption, (err, token) => {
-        if (err) return null;
-        return token;
-      });
+      const token = jwt.sign(userDoc, process.env.JWT_SECRET);
+      if (!token) return null;
+      return token;
     } catch (err) {
       return null;
     }
   }
+
 }
 
 module.exports = Utils;

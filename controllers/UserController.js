@@ -1,9 +1,12 @@
+const uuid = require('uuid');
 const mongoDbClient = require("../utils/mongo");
 const mime = require('mime-types');
 const Utils = require("../utils/Utils");
+const redisClient = require('../utils/redis');
+
+const serverBaseUrl = 'http://127.0.0.1:5000/api/v1';
 
 class UserController{
-  serverBaseUrl = 'http://127.0.0.1:5000/api/v1';
   static async registerUser(req, res) {
     res.setHeader('Content-Type', mime.contentType('json'));
     const isAvailableMongo = await mongoDbClient.isAvailable();
@@ -54,8 +57,8 @@ class UserController{
     }
     return res.status(201).json({
       message: 'user created successfully',
-      dateCreated: newUserDoc.dateCreated,
-      loginEndpoint: `${this.serverBaseUrl}/user/login`,
+      acknowledged: newUserDoc.acknowledged,
+      loginEndpoint: `${serverBaseUrl}/user/login`,
     });
   }
 
@@ -78,16 +81,16 @@ class UserController{
     }
 
     const user = await Utils.findUserByEmail(email);
+    const userObj = JSON.parse(user);
 
-    if (!user) {
+    if (!userObj) {
       return res.status(400).json({
         error: 'Bad request',
         detail: 'invalid email or password',
       });
     }
 
-    const isValidPassword = await Utils
-      .authenticatesPassword(password, user.password);
+    const isValidPassword = await Utils.authenticatesPassword(password, userObj.password);
 
     if (!isValidPassword) {
       return res.status(400).json({
@@ -96,20 +99,30 @@ class UserController{
       });
     }
 
-    const token = await Utils.generateToken(user);
+    const jwtToken = await Utils.generateToken(userObj);
 
-    if (!token) {
+    if (!jwtToken) {
       return res.status(500).json({
         error: 'Internal server error',
         detail: 'failed to generate token',
       });
     }
 
-    res.setHeader('X-Token', token);
+    const userToken = String(uuid.v4());
+    const storeSession = redisClient.storeJwt(userToken, jwtToken);
+
+    if (!storeSession) {
+      return res.status(500).json({
+        error: 'Internal server error',
+        detail: 'failed to store session data',
+      });
+    }
+
+    res.setHeader('X-Token', userToken);
     return res.status(200).json({
       message: 'login was successful',
-      token: token,
-      logoutEndpoint: `${this.serverBaseUrl}/user/logout`,
+      token: userToken,
+      logoutEndpoint: `${serverBaseUrl}/user/logout`,
     });
   }
 }

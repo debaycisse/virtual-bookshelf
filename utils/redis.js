@@ -21,12 +21,22 @@ class RedisClient {
       })
       .catch((err) => {
         this.isAlive = false;
-        console.log(`Redis could not connect`);
+        console.error(`Redis could not connect`);
+        console.log(`detail: ${err.message}`);
       })
   }
 
   isAvailable() {
     return this.isAlive;
+  }
+
+  async storeJwt(userToken, jwt) {
+    try {
+      await this.redisClient.setEx(userToken, 60 * 60 * 24, jwt);
+      return 'done';
+    } catch (err) {
+      return null;
+    }
   }
 }
 
