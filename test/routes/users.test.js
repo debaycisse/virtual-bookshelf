@@ -122,4 +122,52 @@ describe('User Controller Endpoints Testing', () => {
       });
     });
   });
+
+  describe('Tests User\'s Logout Endpoint', () => {
+    let stubUserLogout;
+    let loginData;
+    before(() => {
+      loginData = {
+        url: `${serverBaseUrl}/user/logout`,
+      };
+    });
+
+    beforeEach(() => {
+      stubUserLogout = sinon.stub(UserController, 'logout')
+        .callsFake((req, res) => {
+          res.set('Content-Type', 'application/json');
+          res.status(200).send({ message: 'logged out successfully' });
+        });
+
+    });
+
+    afterEach(() => {
+      stubUserLogout.restore();
+    });
+
+    it('is the endpoint reachable', (done) => {
+      request.post(loginData, (err, res, bod) => {
+        if (err) return done(err);
+        expect(res).to.have.status(200);
+        done();
+      });
+    });
+
+    it('does the endpoint respond with the right content', (done) => {
+      request.post(loginData, (err, res, body) => {
+        if (err) return done(err);
+        expect(res.headers['content-type']).to.include('application/json');
+        done();
+      })
+    });
+
+    it('is the process of the endpoint successful', (done) => {
+      request.post(loginData, (err, res, body) => {
+        if (err) return done(err);
+        const responseBody = JSON.parse(body);
+        expect(responseBody).to.include({ message: 'logged out successfully' });
+        done();
+      });
+    });
+  });
 });
