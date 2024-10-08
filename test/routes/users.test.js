@@ -9,9 +9,9 @@ chai.use(chaiHttp);
 const { expect } = chai;
 const serverBaseUrl = 'http://127.0.0.1:5000/api/v1';
 
-describe('User Authentication Endpoints Testing', () => {
-  describe('Tests User Registration Endpoint', () => {
-    let stub;
+describe('User Controller Endpoints Testing', () => {
+  describe('Tests User\'s Registration Endpoint', () => {
+    let stubUserRegister;
     let postData;
     before(() => {
       postData = {
@@ -25,7 +25,7 @@ describe('User Authentication Endpoints Testing', () => {
     });
 
     beforeEach(() => {
-      stub = sinon.stub(UserController, 'registerUser')
+      stubUserRegister = sinon.stub(UserController, 'registerUser')
         .callsFake((req, res) => {
           res.set('Content-Type', 'application/json');
           res.status(201).send({
@@ -38,7 +38,7 @@ describe('User Authentication Endpoints Testing', () => {
     });
 
     afterEach(() => {
-      stub.restore();
+      stubUserRegister.restore();
     });
 
     it('is the endpoint reachable', (done) => {
@@ -68,10 +68,10 @@ describe('User Authentication Endpoints Testing', () => {
   });
 
   describe('Tests User\'s Login Endpoint', () => {
-    let stub;
-    let postData;
+    let stubUserLogin;
+    let loginData;
     before(() => {
-      postData = {
+      loginData = {
         url: `${serverBaseUrl}/user/login`,
         form: {
           email: 'azeez@gmail.com',
@@ -81,21 +81,45 @@ describe('User Authentication Endpoints Testing', () => {
     });
 
     beforeEach(() => {
-      stub = sinon.stub(UserController, 'login')
+      stubUserLogin = sinon.stub(UserController, 'login')
         .callsFake((req, res) => {
           res.set('Content-Type', 'application/json');
           res.status(200).send({
-            message: 'user created successfully',
-            dateCreated: new Date().toUTCString(),
-            loginEndpoint: 'http://127.0.0.1:5000/api/v1/user/login',
+              message: 'login was successful',
+              token: 'ur748848tg-488ffjh-4747hfrhf-5tgggfg',
+              logoutEndpoint: 'logout endpoint url',
           });
         });
 
     });
 
     afterEach(() => {
-      stub.restore();
+      stubUserLogin.restore();
     });
 
+    it('is the endpoint reachable', (done) => {
+      request.post(loginData, (err, res, bod) => {
+        if (err) return done(err);
+        expect(res).to.have.status(200);
+        done();
+      });
+    });
+
+    it('does the endpoint respond with the right content', (done) => {
+      request.post(loginData, (err, res, body) => {
+        if (err) return done(err);
+        expect(res.headers['content-type']).to.include('application/json');
+        done();
+      })
+    });
+
+    it('is the process of the endpoint successful', (done) => {
+      request.post(loginData, (err, res, body) => {
+        if (err) return done(err);
+        const responseBody = JSON.parse(body);
+        expect(responseBody).to.include({ message: 'login was successful' });
+        done();
+      });
+    });
   });
 });
