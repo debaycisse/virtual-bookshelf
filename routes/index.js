@@ -16,4 +16,8 @@ routes.post('/user/login', async (req, res) => {
   await UserController.login(req, res);
 });
 
+routes.post('/user/logout', async (req, res) => {
+  await UserController.logout(req, res);
+})
+
 module.exports = routes;

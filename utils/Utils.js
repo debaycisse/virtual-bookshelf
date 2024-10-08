@@ -3,6 +3,7 @@ const bcrypt = require('bcrypt');
 const { ObjectId } = require('mongodb');
 const jwt = require('jsonwebtoken');
 const mongoDbClient = require('./mongo');
+const redisClient = require('./redis');
 
 class Utils {
   static validateEmail(email) {
@@ -35,11 +36,9 @@ class Utils {
     } else if (docType === 'shelf') {
       docCollection = await mongoDbClient.shelfCollection();
     }
-    console.log('HERER in Utility')
 
     try {
       const insertedDoc = await docCollection.insertOne(docObject);
-      console.log('NEW USER >> ', insertedDoc)
       if (insertedDoc) {
         return {
           id: insertedDoc.insertedId || insertedDoc._id,
@@ -87,6 +86,29 @@ class Utils {
     }
   }
 
+  static async delSessionToken(req) {
+    let token;
+    let getJwt;
+    try {
+      if (!req.headers.authorization) {
+        return 'Authorization header is missing';
+      }
+      token = req.headers.authorization.split(' ')[1];
+      if (!token) return 'No token was found';
+
+      getJwt = await redisClient.get(token);
+      if (!getJwt) return 'Invalid or expired token';
+    } catch (error) {
+      throw error;
+    }
+
+    try {
+      await redisClient.del(token);
+    } catch (err) {
+      return 'Unable to delete session';
+    }
+    return 'deleted';
+  }
 }
 
 module.exports = Utils;

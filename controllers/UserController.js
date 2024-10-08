@@ -125,6 +125,40 @@ class UserController{
       logoutEndpoint: `${serverBaseUrl}/user/logout`,
     });
   }
+
+  static async logout(req, res) {
+    res.setHeader('Content-Type', mime.contentType('json'));
+
+    const isDeleted = await Utils.delSessionToken(req);
+    
+    if (isDeleted === 'No token was found') {
+      return res.status(400).json({
+        error: 'logout failure',
+        detail: 'No token was found',
+      });
+    }
+    if (isDeleted === 'Authorization header is missing') {
+      return res.status(400).json({
+        error: 'logout failure',
+        detail: 'Authorization header is missing',
+      });
+    }
+    if (isDeleted === 'Invalid or expired token') {
+      return res.status(400).json({
+        error: 'logout failure',
+        detail: 'Invalid or expired token',
+      });
+    }
+    if (isDeleted !== 'deleted') {
+      return res.status(500).json({
+        error: 'server log out failure',
+        detail: 'Could not logout',
+      });
+    }
+    return res.status(200).json({
+      message: 'logged out successfully',
+    });
+  }
 }
 
 module.exports = UserController;

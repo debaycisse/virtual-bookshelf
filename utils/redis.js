@@ -38,6 +38,26 @@ class RedisClient {
       return null;
     }
   }
+
+  async get(key) {
+    try {
+      const val = await this.redisClient.get(key);
+      if (val) return val;
+      else return null;
+    } catch (error) {
+      return null;
+    }
+  }
+
+  async del(key) {
+    try {
+      const isDeleted = await this.redisClient.del(key);
+      if (!isDeleted) return null;
+      return isDeleted;
+    } catch (error) {
+      return null;
+    }
+  }
 }
 
 const redisClient = new RedisClient();
