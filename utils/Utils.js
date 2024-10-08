@@ -1,5 +1,7 @@
 require('dotenv').config();
 const bcrypt = require('bcrypt');
+const { ObjectId } = require('mongodb');
+const jwt = require('jsonwebtoken');
 const mongoDbClient = require('./mongo');
 
 class Utils {
@@ -45,6 +47,40 @@ class Utils {
       return null;
     } catch(err) {
       console.error('could not create document >> ', err.message);
+      return null;
+    }
+  }
+
+  static async findUserByEmail(email) {
+    try{
+      const userCollection = await mongoDbClient.userCollection();
+      const user = await userCollection.findOne({ email });
+      if (user) return user;
+      return null;
+    } catch (err) {
+      return null;
+    }
+  }
+
+  static async authenticatesPassword(plainPassword, hashPassword) {
+    try {
+      bcrypt.compare(plainPassword, hashPassword, (err, result) => {
+        if (err) return false;
+        return result;
+      });
+    } catch (err) {
+      return null;
+    }
+  }
+
+  static async generateToken(userDoc) {
+    try {
+      const jwtOption = { expiresIn: '24h', algorithm: 'RS256' };
+      jwt.sign(userDoc, process.env.JWT_SECRET, jwtOption, (err, token) => {
+        if (err) return null;
+        return token;
+      });
+    } catch (err) {
       return null;
     }
   }

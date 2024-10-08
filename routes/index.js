@@ -12,4 +12,8 @@ routes.post('/user/register', async (req, res) => {
   await UserController.registerUser(req, res);
 });
 
+routes.post('/user/login', async (req, res) => {
+  await UserController.login(req, res);
+});
+
 module.exports = routes;
