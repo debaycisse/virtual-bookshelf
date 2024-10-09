@@ -170,4 +170,56 @@ describe('User Controller Endpoints Testing', () => {
       });
     });
   });
+
+  describe('Tests User\'s Profile Endpoint', () => {
+    let stubUserProfile;
+    const serverUrl = `${serverBaseUrl}/user/me`
+    beforeEach(() => {
+      stubUserProfile = sinon.stub(UserController, 'profile')
+        .callsFake((req, res) => {
+          req.set('X-Token', 'd8ac284d-e4af-46a4-a021-b9fc84c393e3');
+          res.set('Content-Type', 'application/json');
+          res.status(200).send({
+            name: 'Azeez Adebayo',
+            books: 6,
+            categories: 4,
+            shelves: 1,
+            registrationDate: 'Wed, 09 Oct 2024 04:54:53 GMT',
+          });
+        });
+    });
+
+    afterEach(() => {
+      stubUserProfile.restore();
+    })
+
+    it('is the endpoint reachable', (done) => {
+      request.get(serverUrl, (err, res, body) => {
+        if (err) return done(err);
+        expect(res).to.have.status(200);
+        done();
+      });
+    });
+
+    it('does the endpoint respond with the right content', (done) => {
+      request.get(serverUrl, (err, res, body) => {
+        if (err) return done(err);
+        expect(res.headers['content-type']).to.include('application/json');
+        done();
+      })
+    });
+
+    it('does the endpoint contain expected body\'s contents', (done) => {
+      request.get(serverUrl, (err, res, body) => {
+        if (err) return done(err);
+        const responseBody = JSON.parse(body);
+        expect(responseBody).to.include({ name: 'Azeez Adebayo' });
+        expect(responseBody).to.have.property('books', 6);
+        expect(responseBody).to.have.property('categories', 4);
+        expect(responseBody).to.have.property('categories', 4);
+        expect(responseBody).to.have.property('registrationDate', 'Wed, 09 Oct 2024 04:54:53 GMT');
+        done();
+      });
+    });
+  });
 });

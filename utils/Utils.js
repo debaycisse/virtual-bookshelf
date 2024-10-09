@@ -109,6 +109,10 @@ class Utils {
     }
     return 'deleted';
   }
+
+  static async authentication(req, res, next) {
+    // To be implemented
+  }
 }
 
 module.exports = Utils;

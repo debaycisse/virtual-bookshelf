@@ -159,6 +159,10 @@ class UserController{
       message: 'logged out successfully',
     });
   }
+
+  static async profile(req, res) {
+    // TODO: To be implemented after test TDD is done
+  }
 }
 
 module.exports = UserController;
