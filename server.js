@@ -1,5 +1,6 @@
 require('dotenv').config();
 const express = require('express');
+const mime = require('mime-types');
 const protectedRoutes = require('./routes/index');
 const AppController = require('./controllers/AppController');
 const UserController = require('./controllers/UserController');
@@ -32,6 +33,15 @@ app.use(
   },
   protectedRoutes
 );
+
+app.use((err, req, res, next) => {
+  res.set('Content-Type', mime.contentType('json'));
+  if (err) {
+    return res.status(400).json({
+      error: err.message,
+    });
+  }
+});
 
 app.listen(port, () => {
   console.log(`Server running at http://127.0.0.1:${port}`);

@@ -160,15 +160,8 @@ class UserController{
     });
   }
 
-  static async profile(err, req, res) {
+  static async profile(req, res) {
     res.setHeader('Content-Type', mime.contentType('json'));
-
-    if (err) {
-      return res.status(400).json({
-        error: 'authentication error',
-        detail: err.message,
-      });
-    }
 
     if (!req.headers['X-User']) {
       return res.status(400).json({
@@ -176,9 +169,27 @@ class UserController{
       });
     }
 
-    const nBooks = await mongoDbClient.countDoc(parentId, 'book');
-    const nCategories = await mongoDbClient.countDoc(parentId, 'category');
-    const nShelves = await mongoDbClient.countDoc(parentId, 'shelve');
+    let nBooks;
+    try {
+      nBooks = await mongoDbClient.countDoc(parentId, 'book');
+    } catch (error) {
+      nBooks = 0;
+    }
+
+    let nCategories;
+    try {
+      nCategories = await mongoDbClient.countDoc(parentId, 'category');
+      
+    } catch (error) {
+      nCategories = 0;
+    }
+
+    let nShelves;
+    try {
+      nShelves = await mongoDbClient.countDoc(parentId, 'shelve');
+    } catch (error) {
+      nShelves = 0;
+    }
     const userData = await Utils.extractJwt(req.headers['X-User']);
 
     return res.status(200).json({

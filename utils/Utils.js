@@ -96,11 +96,11 @@ class Utils {
     return token;
   }
 
-  static async extractJwt(jwt) {
+  static async extractJwt(token) {
     try {
-      console.log('Beginning decoded')
-      const decoded = await jwt.verify(jwt, process.env.JWT_SECRET);
-      return decoded;
+      const decoded = jwt.verify(token, process.env.JWT_SECRET);
+      delete decoded?._id;
+      delete decoded?.iat;
       return decoded;
     } catch (error) {
       return null;
@@ -140,7 +140,6 @@ class Utils {
       if (!jwt) return next(new Error('Invalid token\'s value'));
 
       const userData = await this.extractJwt(jwt);
-      console.log(`UserData >> ${userData}`)
       if (!userData) return next(new Error('Invalid user\'s data'));
 
       req.headers['X-User'] = jwt;
