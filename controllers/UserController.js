@@ -160,8 +160,34 @@ class UserController{
     });
   }
 
-  static async profile(req, res) {
-    // TODO: To be implemented after test TDD is done
+  static async profile(err, req, res) {
+    res.setHeader('Content-Type', mime.contentType('json'));
+
+    if (err) {
+      return res.status(400).json({
+        error: 'authentication error',
+        detail: err.message,
+      });
+    }
+
+    if (!req.headers['X-User']) {
+      return res.status(400).json({
+        error: 'user\'s data is missing'
+      });
+    }
+
+    const nBooks = await mongoDbClient.countDoc(parentId, 'book');
+    const nCategories = await mongoDbClient.countDoc(parentId, 'category');
+    const nShelves = await mongoDbClient.countDoc(parentId, 'shelve');
+    const userData = await Utils.extractJwt(req.headers['X-User']);
+
+    return res.status(200).json({
+      name: userData.name,
+      registrationDate: userData.dateCreated,
+      numOfBooks: nBooks,
+      numOfBookCategories: nCategories,
+      numOfShelves: nShelves,
+    });
   }
 }
 

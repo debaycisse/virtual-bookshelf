@@ -86,6 +86,27 @@ class Utils {
     }
   }
 
+  static fetchToken(req) {
+    let token;
+    try {
+      token = req.headers.authorization.split(' ')[1];
+    } catch (err) {
+      return null;
+    }
+    return token;
+  }
+
+  static async extractJwt(jwt) {
+    try {
+      console.log('Beginning decoded')
+      const decoded = await jwt.verify(jwt, process.env.JWT_SECRET);
+      return decoded;
+      return decoded;
+    } catch (error) {
+      return null;
+    }
+  }
+
   static async delSessionToken(req) {
     let token;
     let getJwt;
@@ -111,7 +132,23 @@ class Utils {
   }
 
   static async authentication(req, res, next) {
-    next();
+    try {
+      const token = this.fetchToken(req);
+      if (!token) return next(new Error('Invalid token'));
+
+      const jwt = await redisClient.get(`${token}`);
+      if (!jwt) return next(new Error('Invalid token\'s value'));
+
+      const userData = await this.extractJwt(jwt);
+      console.log(`UserData >> ${userData}`)
+      if (!userData) return next(new Error('Invalid user\'s data'));
+
+      req.headers['X-User'] = jwt;
+      next();
+
+    } catch (err) {
+      next(err);
+    }
   }
 }
 

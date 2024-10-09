@@ -40,6 +40,22 @@ class MongoDBClient {
     const bookCol = await this.db.collection('books');
     return bookCol;
   }
+
+  async countDoc(parentId, docType) {
+    try {
+      let docTypeColletion;
+      const filter = { parentId };
+  
+      if (docType === 'book') docTypeColletion = this.bookCollection();
+      if (docType === 'category') docTypeColletion = this.categoryCollection();
+      if (docType === 'shelve') docTypeColletion = this.shelfCollection();
+  
+      const nDoc = (await docTypeColletion).countDocuments(filter);
+      return nDoc;
+    } catch (error) {
+      return 0;
+    }
+  }
 }
 
 const mongoDbClient = new MongoDBClient();
