@@ -111,7 +111,7 @@ class Utils {
   }
 
   static async authentication(req, res, next) {
-    // To be implemented
+    next();
   }
 }
 

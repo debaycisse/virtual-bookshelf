@@ -4,6 +4,7 @@ const chaiHttp = require('chai-http');
 const sinon = require('sinon');
 const UserController = require('../../controllers/UserController');
 const app = require('../../server');
+const Utils = require('../../utils/Utils');
 
 chai.use(chaiHttp);
 const { expect } = chai;
@@ -173,11 +174,22 @@ describe('User Controller Endpoints Testing', () => {
 
   describe('Tests User\'s Profile Endpoint', () => {
     let stubUserProfile;
-    const serverUrl = `${serverBaseUrl}/user/me`
+    let stubMiddleWare;
+    let serverUrl;
+
+    before(() => {
+      serverUrl = `${serverBaseUrl}/user/me`;
+    });
+
     beforeEach(() => {
+      stubMiddleWare = sinon.stub(Utils, 'authentication')
+        .callsFake((req, res, next) => {
+          req.headers['X-User'] = 'jwt';
+          next();
+        });
+
       stubUserProfile = sinon.stub(UserController, 'profile')
         .callsFake((req, res) => {
-          req.set('X-Token', 'd8ac284d-e4af-46a4-a021-b9fc84c393e3');
           res.set('Content-Type', 'application/json');
           res.status(200).send({
             name: 'Azeez Adebayo',
@@ -185,13 +197,15 @@ describe('User Controller Endpoints Testing', () => {
             categories: 4,
             shelves: 1,
             registrationDate: 'Wed, 09 Oct 2024 04:54:53 GMT',
+            requestHeader: req.headers['X-User'],
           });
         });
     });
 
     afterEach(() => {
+      stubMiddleWare.restore();
       stubUserProfile.restore();
-    })
+    });
 
     it('is the endpoint reachable', (done) => {
       request.get(serverUrl, (err, res, body) => {
@@ -216,10 +230,20 @@ describe('User Controller Endpoints Testing', () => {
         expect(responseBody).to.include({ name: 'Azeez Adebayo' });
         expect(responseBody).to.have.property('books', 6);
         expect(responseBody).to.have.property('categories', 4);
-        expect(responseBody).to.have.property('categories', 4);
+        expect(responseBody).to.have.property('shelves', 1);
         expect(responseBody).to.have.property('registrationDate', 'Wed, 09 Oct 2024 04:54:53 GMT');
         done();
       });
     });
+
+    it('contains user\'s header', (done) => {
+      request.get(serverUrl, (err, res, body) => {
+        if (err) return done(err);
+        const responseBody = JSON.parse(body);
+        expect(responseBody).to.have.property('requestHeader', 'jwt');
+        done();
+      });
+    });
+
   });
 });
