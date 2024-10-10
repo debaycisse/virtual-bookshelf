@@ -3,7 +3,6 @@ const request = require('request');
 const chaiHttp = require('chai-http');
 const sinon = require('sinon');
 const UserController = require('../../controllers/UserController');
-const app = require('../../server');
 const Utils = require('../../utils/Utils');
 
 chai.use(chaiHttp);
