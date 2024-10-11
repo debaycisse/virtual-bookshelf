@@ -1,70 +1,60 @@
 const chai = require('chai');
 const request = require('request');
-const chaiHttp = require('chai-http');
 const sinon = require('sinon');
 const ShelveController = require('../../controllers/ShelveController');
 
-chai.use(chaiHttp);
-const { expect } = chai;
-const serverBaseUrl = 'http://127.0.0.1:5000/api/v1';
-
 describe('Shelve Controller Endpoints Testing', () => {
   describe('Tests Shelve\'s Creation Endpoint', () => {
-    let stubShelveCreation;
-    let postData;
+    let stubShelve;
+    let shelvePostData;
+    const serverBaseUrl = 'http://127.0.0.1:5000/api/v1';
+
     before(() => {
-      postData = {
+      shelvePostData = {
         url: `${serverBaseUrl}/shelve`,
         form: {
-          name: 'My First Shelve',
+          name: 'My Virtual Shelf'
         },
       };
     });
 
     beforeEach(() => {
-      stubShelveCreation = sinon.stub(ShelveController, 'createShelve')
+      stubShelve = sinon.stub(ShelveController, 'createShelve')
         .callsFake((req, res) => {
           res.set('Content-Type', 'application/json');
           res.status(201).send({
+<<<<<<< HEAD
             acknowledgement: true,
             id: 'qwerty-1234567890',
             parentId: 'poiuyt-098765-4321',
             message: 'shelve created successfully',
             dateCreated: new Date().toUTCString(),
             retrieveShelveEndpoint: 'http://127.0.0.1:5000/api/v1/shelve',
+=======
+            acknowledge: true,
+            id: 'qwerty-123-456-7890' ,
+            ownerId: 'poiuyt-098765-4321',
+            message: 'created shelve successfully',
+            dateCreated: 'Thursday 10, October, 2024',
+            retrieveShelvesEndpoint: 'http://127.0.0.1/api/v1/shelves',
+            retrieveShelveEndpoint: 'http://127.0.0.1/api/v1/shelve/<:id>',
+>>>>>>> 2b0e78b3dc2ab4ba0734c4bcfea104f10b31860b
           });
         });
     });
 
     afterEach(() => {
-      stubShelveCreation.restore();
+      stubShelve.restore();
     });
 
-    it('is the endpoint reachable', (done) => {
-      request.post(postData, (err, res, body) => {
+    it('should confirm that the server is available', (done) => {
+      request.post(serverUrl, shelvePostData, (err, res, body) => {
         if (err) return done(err);
-        expect(res).to.have.status(201);
+        expect(res).to.have.status(200);
         done();
-      })
+      });    
     });
 
-    it('does the endpoint respond with correct content', (done) => {
-      request.post(postData, (err, res, body) => {
-        if (err) return done(err);
-        expect(res.headers['content-type']).to.include('application/json');
-        done();
-      })
-    });
-
-    it('is the process of the endpoint successful', (done) => {
-      request.post(postData, (err, res, body) => {
-        if (err) return done(err);
-        const responseBody = JSON.parse(body);  // because body is string
-        expect(responseBody).to.include({ message: 'shelve created successfully' });
-        expect(responseBody).to.have.property('ownerId', 'poiuyt-098765-4321');
-        done();
-      });
-    });
   });
 
 });

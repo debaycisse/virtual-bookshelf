@@ -99,6 +99,8 @@ class Utils {
   static async extractJwt(token) {
     try {
       const decoded = jwt.verify(token, process.env.JWT_SECRET);
+      delete decoded?._id;
+      delete decoded?.iat;
       return decoded;
     } catch (error) {
       return null;
