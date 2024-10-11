@@ -7,7 +7,7 @@ describe('Virtual Bookshelf Endpoint Server Testing', () => {
   it('should confirm that the server is available', (done) => {
     request.get(serverUrl, (err, res, body) => {
       if (err) return done(err);
-      expect(body).to.include("server is available");
+      expect(body).to.include('server is available');
       done();
     });    
   });
