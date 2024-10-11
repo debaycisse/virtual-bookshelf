@@ -1,7 +1,6 @@
 const { Router } = require('express');
 const UserController = require('../controllers/UserController');
 const ShelveController = require('../controllers/ShelveController');
-const Utils = require('../utils/Utils');
 
 const protectedRoutes = Router();
 

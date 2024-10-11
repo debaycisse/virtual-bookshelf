@@ -28,7 +28,7 @@ describe('Shelve Controller Endpoints Testing', () => {
           res.status(201).send({
             acknowledgement: true,
             id: 'qwerty-1234567890',
-            ownerId: 'poiuyt-098765-4321',
+            parentId: 'poiuyt-098765-4321',
             message: 'shelve created successfully',
             dateCreated: new Date().toUTCString(),
             retrieveShelveEndpoint: 'http://127.0.0.1:5000/api/v1/shelve',
