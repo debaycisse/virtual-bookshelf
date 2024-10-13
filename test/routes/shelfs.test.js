@@ -4,7 +4,6 @@ const request = require('request');
 const sinon = require('sinon');
 const BookshelfController = require('../../controllers/BookshelfController');
 const Utils = require('../../utils/Utils');
-const { json } = require('express');
 
 chai.use(chaiHttp);
 const expect = chai.expect;
@@ -26,7 +25,7 @@ describe('Bookshelf Controller Endpoints Testing', () => {
 
   describe('Tests POST /api/v1/bookshelf', () => {
     let stubBookshelf;
-    let bookshelfPostData = {
+    const bookshelfPostData = {
       url: `${serverBaseUrl}/bookshelf`,
       json: {
         name: 'My Virtual Bookshelf',
@@ -40,7 +39,7 @@ describe('Bookshelf Controller Endpoints Testing', () => {
           res.status(201).send({
             acknowledge: true,
             id: 'qwerty-123-456-7890',
-            name: req.body.name || null,
+            name: req.body.name,
             ownerId: 'poiuyt-098765-4321',
             message: 'created bookshelf successfully',
             authenticationHeader: req.headers['X-User'] || null,
@@ -90,7 +89,7 @@ describe('Bookshelf Controller Endpoints Testing', () => {
 
   describe('Tests GET /api/v1/bookshelf/:id', () => {
     let stubBookshelf;
-    let requestData = {
+    const requestData = {
       url: `${serverBaseUrl}/bookshelf/670a46ccd9341f13294c2da5`,
       json: {},
     };

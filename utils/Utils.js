@@ -172,6 +172,30 @@ class Utils {
     }
     return true;
   }
+
+  static async ownsBookshelf(userId, bookshelfId) {
+    try {
+      const userExist = await mongoDbClient
+        .verifyDocType(userId, 'user');
+      const bookshelfExist = await mongoDbClient
+        .verifyDocType(bookshelfId, 'bookshelf');
+      
+      if (!userExist) return false;
+      if (!bookshelfExist) return false;
+
+      const bookshelfCol = await mongoDbClient.bookshelfCollection();
+      const bookshelfDoc = await bookshelfCol
+        .findOne({ 
+          _id: new ObjectId(bookshelfId),
+          ownerId: new ObjectId(userId),
+        });
+
+      if (bookshelfDoc) return true;
+      return false;
+    } catch (error) {
+      return false;
+    }
+  }
 }
 
 module.exports = Utils;

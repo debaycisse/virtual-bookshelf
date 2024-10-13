@@ -1,5 +1,6 @@
 require('dotenv').config();
 const { MongoClient } = require('mongodb');
+const { ObjectId } = require('mongodb');
 
 class MongoDBClient {
   constructor() {
@@ -54,6 +55,21 @@ class MongoDBClient {
       return nDoc;
     } catch (error) {
       return 0;
+    }
+  }
+
+  async verifyDocType(docId, docType) {
+    let docCol;
+
+    if (docType === 'bookshelf') docCol = await this.bookshelfCollection();
+    if (docType === 'category') docCol = await this.categoryCollection();
+    if (docType === 'user') docCol = await this.userCollection();
+    try {
+      const doc = await docCol.findOne({  _id: new ObjectId(docId) });
+      if (doc) return doc._id;
+      return null;
+    } catch (error) {
+      return null;
     }
   }
 }

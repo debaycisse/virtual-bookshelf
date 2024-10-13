@@ -7,6 +7,7 @@ class BookshelfController {
   static async createBookshelf(req, res) {
     res.setHeader('Content-Type', mime.contentType('json'));
     try {
+      const baseUrl = 'http://127.0.0.1:5000/api/v1';
       const userData = await Utils.extractJwt(req.headers['X-User']);
       const parentId = userData._id;
 
@@ -40,14 +41,13 @@ class BookshelfController {
         dateModified: dateCreated.toUTCString(),
       });
       return res.status(201).json({
-        acknowledged: doc.acknowledged,
         id: doc.insertedId,
         name: shelfName,
-        ownerId: parentId,
+        parentId: parentId,
         message: 'created bookshelf successfully',
         dateCreated: dateCreated.toUTCString(),
-        retrieveBookshelfs: 'http://127.0.0.1:5000/api/v1/bookShelfs',
-        retrieveBookshelf: 'http://127.0.0.1:5000/api/v1/bookShelf/<:id>',
+        retrieveBookshelfs: `${baseUrl}/bookShelfs`,
+        retrieveBookshelf: `${baseUrl}/bookShelf/<:id>`,
       });
     } catch (error) {
       return res.status(500).json({
@@ -128,16 +128,16 @@ class BookshelfController {
 
       let previousPage = null;
       if (page > 0) {
-        previousPage = `http://127.0.0.1:5000/api/v1/bookshelf?page=${prevPage}`
+        previousPage = `${baseUrl}/bookshelf?page=${prevPage}`
       }
 
       return res.status(200).json({
         bookshelfs: bookshelfList,
         currentPage,
         previousPage,
-        nextPage: nextPage? `http://127.0.0.1:5000/api/v1/bookshelf?page=${nextPage}` : null, 
-        retrieveBookshelf: 'http://127.0.0.1:5000/api/v1/bookshelf/<:id>',
-        removeBookshelf: 'http://127.0.0.1:5000/api/v1/bookshelf/<:id>'
+        nextPage: nextPage? `${baseUrl}/bookshelf?page=${nextPage}` : null, 
+        retrieveBookshelf: `${baseUrl}/bookshelf/<:id>`,
+        removeBookshelf: `${baseUrl}/bookshelf/<:id>`,
       });
 
     } catch (error) {
@@ -179,10 +179,10 @@ class BookshelfController {
       return res.status(200).json({
         id: bookshelf._id,
         name: bookshelf.name,
-        ownerId: bookshelf.parentId,
+        parentId: bookshelf.parentId,
         dateCreated: bookshelf.dateCreated,
-        retrieveAllBookshelfs: 'http://127.0.0.1:5000/api/v1/bookshelfs',
-        removeBookshelf: 'http://127.0.0.1:5000/api/v1/bookshelf/<:id>',
+        retrieveAllBookshelfs: `${baseUrl}/bookshelfs`,
+        removeBookshelf: `${baseUrl}/bookshelf/<:id>`,
       });
 
     } catch (error) {
@@ -226,7 +226,7 @@ class BookshelfController {
 
       if (!existingBookshelfs) {
         return res.status(404).json({
-          error: 'Invalid product\'s or owner\'s id'
+          error: 'Invalid product\'s or parent\'s id'
         });
       }
 
@@ -257,11 +257,11 @@ class BookshelfController {
       return res.status(200).json({
         id: existingBookshelfs._id,
         name: existingBookshelfs.name,
-        ownerId: existingBookshelfs.parentId,
+        parentId: existingBookshelfs.parentId,
         dateCreated: existingBookshelfs.dateCreated,
         dateModified: existingBookshelfs.dateModified,
-        retrieveAllBookshelfs: 'http://127.0.0.1:5000/api/v1/bookshelfs',
-        removeBookshelf: 'http://127.0.0.1:5000/api/v1/bookshelf/<:id>'
+        retrieveAllBookshelfs: `${baseUrl}/bookshelfs`,
+        removeBookshelf: `${baseUrl}/bookshelf/<:id>`,
       });
       
     } catch (error) {
