@@ -9,7 +9,7 @@ describe('Virtual Bookshelf Endpoint Server Testing', () => {
       if (err) return done(err);
       expect(body).to.include('server is available');
       done();
-    });    
+    });
   });
 
   it('should confirm that the server has HTTP status 200', (done) => {

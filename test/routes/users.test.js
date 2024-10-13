@@ -17,7 +17,7 @@ describe('User Controller Endpoints Testing', () => {
     before(() => {
       postData = {
         url: `${serverBaseUrl}/user/register`,
-        form: {
+        json: {
           name: 'Azeez Adebayo',
           email: 'azeez@gmail.com',
           password: 'DocMong%4$%123',
@@ -61,8 +61,7 @@ describe('User Controller Endpoints Testing', () => {
     it('is the process of the endpoint successful', (done) => {
       request.post(postData, (err, res, body) => {
         if (err) return done(err);
-        const responseBody = JSON.parse(body);  // because body is string
-        expect(responseBody).to.include({ message: 'user created successfully' });
+        expect(body).to.include({ message: 'user created successfully' });
         done();
       });
     });
@@ -74,7 +73,7 @@ describe('User Controller Endpoints Testing', () => {
     before(() => {
       loginData = {
         url: `${serverBaseUrl}/user/login`,
-        form: {
+        json: {
           email: 'azeez@gmail.com',
           password: 'DocMong%4$%123',
         },
@@ -117,8 +116,7 @@ describe('User Controller Endpoints Testing', () => {
     it('is the process of the endpoint successful', (done) => {
       request.post(loginData, (err, res, body) => {
         if (err) return done(err);
-        const responseBody = JSON.parse(body);
-        expect(responseBody).to.include({ message: 'login was successful' });
+        expect(body).to.include({ message: 'login was successful' });
         done();
       });
     });
@@ -195,7 +193,7 @@ describe('User Controller Endpoints Testing', () => {
             name: 'Azeez Adebayo',
             books: 6,
             categories: 4,
-            shelves: 1,
+            bookshelfs: 1,
             registrationDate: 'Wed, 09 Oct 2024 04:54:53 GMT',
             requestHeader: req.headers['X-User'],
           });
@@ -230,7 +228,7 @@ describe('User Controller Endpoints Testing', () => {
         expect(responseBody).to.include({ name: 'Azeez Adebayo' });
         expect(responseBody).to.have.property('books', 6);
         expect(responseBody).to.have.property('categories', 4);
-        expect(responseBody).to.have.property('shelves', 1);
+        expect(responseBody).to.have.property('bookshelfs', 1);
         expect(responseBody).to.have.property('registrationDate', 'Wed, 09 Oct 2024 04:54:53 GMT');
         done();
       });

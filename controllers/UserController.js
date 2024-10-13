@@ -169,6 +169,9 @@ class UserController{
       });
     }
 
+    const userData = await Utils.extractJwt(req.headers['X-User']);
+    const parentId = userData?._id;
+
     let nBooks;
     try {
       nBooks = await mongoDbClient.countDoc(parentId, 'book');
@@ -179,18 +182,16 @@ class UserController{
     let nCategories;
     try {
       nCategories = await mongoDbClient.countDoc(parentId, 'category');
-      
     } catch (error) {
       nCategories = 0;
     }
 
     let nShelves;
     try {
-      nShelves = await mongoDbClient.countDoc(parentId, 'shelve');
+      nShelves = await mongoDbClient.countDoc(parentId, 'bookShelf');
     } catch (error) {
       nShelves = 0;
     }
-    const userData = await Utils.extractJwt(req.headers['X-User']);
 
     return res.status(200).json({
       name: userData.name,

@@ -33,8 +33,8 @@ class Utils {
       docCollection = await mongoDbClient.bookCollection();
     } else if (docType === 'category') {
       docCollection = await mongoDbClient.categoryCollection();
-    } else if (docType === 'shelf') {
-      docCollection = await mongoDbClient.shelfCollection();
+    } else if (docType === 'bookShelf') {
+      docCollection = await mongoDbClient.bookshelfCollection();
     }
 
     try {
@@ -99,8 +99,6 @@ class Utils {
   static async extractJwt(token) {
     try {
       const decoded = jwt.verify(token, process.env.JWT_SECRET);
-      delete decoded?._id;
-      delete decoded?.iat;
       return decoded;
     } catch (error) {
       return null;
@@ -148,6 +146,31 @@ class Utils {
     } catch (err) {
       next(err);
     }
+  }
+
+  static async isEmpty(docId, docType) {
+    const bookCol = await mongoDbClient.bookCollection();
+    const categoryCol = await mongoDbClient.categoryCollection();
+    let existingBooks;
+    let existingCategories;
+
+    if (docType === 'bookshelf') {
+      existingBooks = await bookCol
+        .find({ parentId: new ObjectId(docId) }).toArray();
+      existingCategories = await categoryCol
+        .find({ parentId: new ObjectId(docId) });
+    }
+
+    if (docType === 'category') {
+      existingBooks = await bookCol
+        .find({ parentId: new ObjectId(docId) }).toArray();
+    }
+
+
+    if (existingBooks?.length > 0 || existingCategories?.length > 0) {
+      return false;
+    }
+    return true;
   }
 }
 

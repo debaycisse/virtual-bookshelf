@@ -26,9 +26,9 @@ class MongoDBClient {
     return userCol;
   }
 
-  async shelfCollection() {
-    const shelfCol = await this.db.collection('shelfs');
-    return shelfCol;
+  async bookshelfCollection() {
+    const bookshelfCol = await this.db.collection('shelfs');
+    return bookshelfCol;
   }
 
   async categoryCollection() {
@@ -48,7 +48,7 @@ class MongoDBClient {
   
       if (docType === 'book') docTypeColletion = this.bookCollection();
       if (docType === 'category') docTypeColletion = this.categoryCollection();
-      if (docType === 'shelve') docTypeColletion = this.shelfCollection();
+      if (docType === 'bookShelf') docTypeColletion = this.bookshelfCollection();
   
       const nDoc = (await docTypeColletion).countDocuments(filter);
       return nDoc;
