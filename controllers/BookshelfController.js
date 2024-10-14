@@ -246,7 +246,7 @@ class BookshelfController {
 
       const updatedShelf = await bookshelfCol.updateOne(filter, update);
       if (updatedShelf.modifiedCount < 1) {
-        return res.status(500).json({
+        return res.status(404).json({
           error: 'Internal server error',
           detail: 'Error updating shelf\'s name'
         });
