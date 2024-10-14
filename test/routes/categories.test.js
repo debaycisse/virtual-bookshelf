@@ -135,4 +135,230 @@ describe('Book Category Controller Endpoints Testing', () => {
     });
   });
 
+  describe('Tests GET /api/v1/category/<id>', () => {
+    let stubCategory;
+    const categoryGetData = {
+      url: `${serverBaseUrl}/category/670cd6957d3afeb10458f6a7`,
+      json: {
+        parentId: '670cd6657d3afeb10458f6a6',
+      },  
+    };
+    const categoryGetDataNoParentId = {
+      url: `${serverBaseUrl}/category/670cd6957d3afeb10458f6a7`,
+      json: {}
+    };
+
+    beforeEach(() => {
+      stubCategory = sinon.stub(CategoryController, 'getCategory')
+        .callsFake((req, res) => {
+          res.set('Content-Type', 'application/json');
+
+          if (!req.params.id) {
+            return res.status(400).send({
+              error: 'Invalid category\'s id',
+            });
+          }
+
+          if (!req.body.parentId) {
+            return res.status(400).send({
+              error: 'No parent\'s id',
+            });
+          }
+
+          res.status(200).send({
+            id: '670cd6957d3afeb10458f6a7',
+            name: 'Science',
+            parentId: 'poiuyt-098765-4321',
+            nBooks: 0,
+            dateCreated: 'Thursday 10, October, 2024',
+            dateModified: 'Thursday 10, October, 2024', 
+            retrieveAllCategories: 'http://127.0.0.1:5000/api/v1/categories',
+            retrieveCategory: 'http://127.0.0.1:5000/api/v1/category/<:id>',
+          });
+        });
+    });
+
+    afterEach(() => {
+      stubCategory.restore();
+    });
+
+    it('is the endpoint reachable', (done) => {
+      request(categoryGetData, (err, res, body) => {
+        if (err) return done(err);
+        expect(res).to.have.status(200);
+        done();
+      });
+    });
+
+    it('does it discover a missing parent ID in a request', (done) => {
+      request(categoryGetDataNoParentId, (err, res, body) => {
+        if (err) return done(err);
+        expect(body).to.have.property('error', 'No parent\'s id');
+        done();
+      });
+    });
+  });
+
+  describe('Tests GET /api/v1/categories', () => {
+    let stubCategories;
+    const categoriesGetData = {
+      url: `${serverBaseUrl}/categories`,
+      json: {
+        parentId: '670cd6657d3afeb10458f6a6',
+      },
+    };
+    const categoriesGetDataNoParentId = {
+      url: `${serverBaseUrl}/categories`,
+      json: {}
+    };
+
+    beforeEach(() => {
+      stubCategories = sinon.stub(CategoryController, 'getCategories')
+        .callsFake((req, res) => {
+          res.set('Content-Type', 'application/json');
+
+          if (!req.body.parentId) {
+            return res.status(400).send({
+              error: 'No parent\'s id',
+            });
+          }
+
+          res.status(200).send({
+            categories: [
+              {
+                id: '670cd6957d3afeb10458f6a7',
+                name: 'Science',
+                parentId: 'poiuyt-098765-4321',
+                nBooks: 0,
+                dateCreated: 'Thursday 10, October, 2024',
+                dateModified: 'Thursday 10, October, 2024', 
+              },
+              {
+                id: '985de6959e2afeb10395f6a7',
+                name: 'Technology',
+                parentId: 'poiuyt-098765-4321',
+                nBooks: 12,
+                dateCreated: 'Thursday 10, October, 2024',
+                dateModified: 'Thursday 10, October, 2024', 
+              }
+            ],
+            currentPage: 1,
+            previousPage:null,
+            nextPage: null,
+            retrieveAllCategories: 'http://127.0.0.1:5000/api/v1/categories',
+            retrieveCategory: 'http://127.0.0.1:5000/api/v1/category/<:id>',
+          });
+        });
+    });
+
+    afterEach(() => {
+      stubCategories.restore();
+    });
+
+    it('is the endpoint reachable', (done) => {
+      request.get(categoriesGetData, (err, res, body) => {
+        if (err) return done(err);
+        expect(res).to.have.status(200);
+        done();
+      });
+    });
+
+    it('is parent ID present', (done) => {
+      request.get(categoriesGetData, (err, res, body) => {
+        if (err) return done(err);
+        expect(body).to.have.property('currentPage', 1);
+        done();
+      });
+    });
+
+    it('does the returned body contain correct data', (done) => {
+      request.get(categoriesGetData, (err, res, body) => {
+        if (err) return done(err);
+        expect(body.categories).to.be.an('array');
+        done();
+      });
+    });
+
+    it('does process handle missing parent id', (done) => {
+      request.get(categoriesGetDataNoParentId, (err, res, body) => {
+        if (err) return done(err);
+        expect(body).to.have.property('error', 'No parent\'s id');
+        done();
+      });
+    });
+  });
+
+  describe('Tests PUT /api/v1/category/<id>', () => {
+    let stubCategory;
+    const categoryPutData = {
+      url: `${serverBaseUrl}/category/670cd6957d3afeb10458f6a7`,
+      json: {
+        parentId: '670cd6657d3afeb10458f6a6',
+      },  
+    };
+    const categoryPuttDataNoParentId = {
+      url: `${serverBaseUrl}/category/670cd6957d3afeb10458f6a7`,
+      json: {}
+    };
+
+    beforeEach(() => {
+      stubCategory = sinon.stub(CategoryController, 'modifyCategory')
+        .callsFake((req, res) => {
+          res.set('Content-Type', 'application/json');
+
+          if (!req.params.id) {
+            return res.status(400).send({
+              error: 'Invalid category\'s id',
+            });
+          }
+
+          if (!req.body.parentId) {
+            return res.status(400).send({
+              error: 'No parent\'s id',
+            });
+          }
+
+          res.status(200).send({
+            id: '670cd6957d3afeb10458f6a7',
+            name: 'Science',
+            parentId: 'poiuyt-098765-4321',
+            nBooks: 0,
+            message: 'updated category successfully',
+            dateCreated: 'Thursday 10, October, 2024',
+            dateModified: 'Thursday 10, October, 2024', 
+            retrieveCategory: 'http://127.0.0.1:5000/api/v1/category/<:id>',
+            removeCategory: 'http://127.0.0.1:5000/api/v1/category/<:id>',
+          });
+        });
+    });
+
+    afterEach(() => {
+      stubCategory.restore();
+    });
+
+    it('is the endpoint reachable', (done) => {
+      request.put(categoryPutData, (err, res, body) => {
+        if (err) return done(err);
+        expect(res).to.have.status(200);
+        done();
+      });
+    });
+
+    it('is it able to update category document', () => {
+      request.put(categoryPutData, (err, res, body) => {
+        if (err) return done(err);
+        expect(body).to.have.property('message', 'updated category successfully');
+        done();
+      });
+    });
+
+    it('does it return error for missing parent ID', (done) => {
+      request.put(categoryPuttDataNoParentId, (err, res, body) => {
+        if (err) return done(err);
+        expect(body).to.have.property('error', 'No parent\'s id');
+        done();
+      });
+    });
+  });
+
 });

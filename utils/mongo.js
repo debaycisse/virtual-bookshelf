@@ -72,6 +72,25 @@ class MongoDBClient {
       return null;
     }
   }
+
+  async findDoc(filterObj, docType) {
+    let docCol = null;
+
+    if (docType === 'book') docCol = this.bookCollection();
+    if (docType === 'bookshelf') docCol = this.bookshelfCollection();
+    if (docType === 'category') docCol = await this.categoryCollection();
+    if (docType === 'user') docCol = await this.userCollection();
+
+    if (!docCol) return null;
+
+    try {
+      const doc = await docCol.findOne(filterObj);
+      if (!doc) return null;
+      return doc;
+    } catch (error) {
+      return null;
+    }
+  }
 }
 
 const mongoDbClient = new MongoDBClient();

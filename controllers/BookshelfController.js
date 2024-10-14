@@ -3,11 +3,12 @@ const { ObjectId } = require('mongodb');
 const mongoDbClient = require('../utils/mongo');
 const Utils = require('../utils/Utils');
 
+const baseUrl = 'http://127.0.0.1:5000/api/v1';
+
 class BookshelfController {
   static async createBookshelf(req, res) {
     res.setHeader('Content-Type', mime.contentType('json'));
     try {
-      const baseUrl = 'http://127.0.0.1:5000/api/v1';
       const userData = await Utils.extractJwt(req.headers['X-User']);
       const parentId = userData._id;
 
@@ -47,7 +48,7 @@ class BookshelfController {
         message: 'created bookshelf successfully',
         dateCreated: dateCreated.toUTCString(),
         retrieveBookshelfs: `${baseUrl}/bookShelfs`,
-        retrieveBookshelf: `${baseUrl}/bookShelf/<:id>`,
+        retrieveBookshelf: `${baseUrl}/bookShelf/<id>`,
       });
     } catch (error) {
       return res.status(500).json({
@@ -93,7 +94,7 @@ class BookshelfController {
           $limit: maxItems,
         },
         {
-          $skip: Number(page) * maxItems,
+          $skip: page * maxItems,
         }
       ]
       const bookshelfs = await bookshelfCol
@@ -120,7 +121,7 @@ class BookshelfController {
       }
 
       let prevPage = 0;
-      const isSkipped = page * maxItems > 0;
+      const isSkipped = (page * maxItems) > 0;
       if (isSkipped) {
         prevPage = page - 1;
       }
@@ -128,16 +129,16 @@ class BookshelfController {
 
       let previousPage = null;
       if (page > 0) {
-        previousPage = `${baseUrl}/bookshelf?page=${prevPage}`
+        previousPage = `${baseUrl}/bookshelfs?page=${prevPage}`
       }
 
       return res.status(200).json({
         bookshelfs: bookshelfList,
         currentPage,
         previousPage,
-        nextPage: nextPage? `${baseUrl}/bookshelf?page=${nextPage}` : null, 
-        retrieveBookshelf: `${baseUrl}/bookshelf/<:id>`,
-        removeBookshelf: `${baseUrl}/bookshelf/<:id>`,
+        nextPage: nextPage? `${baseUrl}/bookshelfs?page=${nextPage}` : null, 
+        retrieveBookshelf: `${baseUrl}/bookshelf/<id>`,
+        removeBookshelf: `${baseUrl}/bookshelf/<id>`,
       });
 
     } catch (error) {
@@ -182,7 +183,7 @@ class BookshelfController {
         parentId: bookshelf.parentId,
         dateCreated: bookshelf.dateCreated,
         retrieveAllBookshelfs: `${baseUrl}/bookshelfs`,
-        removeBookshelf: `${baseUrl}/bookshelf/<:id>`,
+        removeBookshelf: `${baseUrl}/bookshelf/<id>`,
       });
 
     } catch (error) {
@@ -261,7 +262,7 @@ class BookshelfController {
         dateCreated: existingBookshelfs.dateCreated,
         dateModified: existingBookshelfs.dateModified,
         retrieveAllBookshelfs: `${baseUrl}/bookshelfs`,
-        removeBookshelf: `${baseUrl}/bookshelf/<:id>`,
+        removeBookshelf: `${baseUrl}/bookshelf/<id>`,
       });
       
     } catch (error) {

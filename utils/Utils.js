@@ -156,14 +156,14 @@ class Utils {
 
     if (docType === 'bookshelf') {
       existingBooks = await bookCol
-        .find({ parentId: new ObjectId(docId) }).toArray();
+        .find({ bookshelfId: new ObjectId(docId) }).toArray();
       existingCategories = await categoryCol
         .find({ parentId: new ObjectId(docId) });
     }
 
     if (docType === 'category') {
       existingBooks = await bookCol
-        .find({ parentId: new ObjectId(docId) }).toArray();
+        .find({ categoryId: new ObjectId(docId) }).toArray();
     }
 
 

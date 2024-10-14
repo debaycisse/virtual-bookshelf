@@ -33,4 +33,16 @@ protectedRoutes.post('/category', async (req, res) => {
   await CategoryController.createCategory(req, res);
 });
 
+protectedRoutes.get('/category/:id', async (req, res) => {
+  await CategoryController.getCategory(req, res);
+});
+
+protectedRoutes.get('/categories', async (req, res) => {
+  await CategoryController.getCategories(req, res);
+});
+
+protectedRoutes.put('/category/:id', async (req, res) => {
+  await CategoryController.modifyCategory(req, res);
+});
+
 module.exports = protectedRoutes;
