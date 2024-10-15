@@ -45,4 +45,8 @@ protectedRoutes.put('/category/:id', async (req, res) => {
   await CategoryController.modifyCategory(req, res);
 });
 
+protectedRoutes.delete('/category/:id', async (req, res) => {
+  await CategoryController.deleteCategory(req, res);
+});
+
 module.exports = protectedRoutes;

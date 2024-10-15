@@ -296,7 +296,7 @@ describe('Book Category Controller Endpoints Testing', () => {
         parentId: '670cd6657d3afeb10458f6a6',
       },  
     };
-    const categoryPuttDataNoParentId = {
+    const categoryPutDataNoParentId = {
       url: `${serverBaseUrl}/category/670cd6957d3afeb10458f6a7`,
       json: {}
     };
@@ -344,7 +344,7 @@ describe('Book Category Controller Endpoints Testing', () => {
       });
     });
 
-    it('is it able to update category document', () => {
+    it('is it able to update category document', (done) => {
       request.put(categoryPutData, (err, res, body) => {
         if (err) return done(err);
         expect(body).to.have.property('message', 'updated category successfully');
@@ -353,9 +353,72 @@ describe('Book Category Controller Endpoints Testing', () => {
     });
 
     it('does it return error for missing parent ID', (done) => {
-      request.put(categoryPuttDataNoParentId, (err, res, body) => {
+      request.put(categoryPutDataNoParentId, (err, res, body) => {
         if (err) return done(err);
         expect(body).to.have.property('error', 'No parent\'s id');
+        done();
+      });
+    });
+  });
+
+  describe('Tests DELETE /api/v1/category/<id>', () => {
+    let stubCategory;
+    const categoryPutData = {
+      url: `${serverBaseUrl}/category/670cd6957d3afeb10458f6a7`,
+      json: {
+        parentId: '670cd6657d3afeb10458f6a6',
+      },  
+    };
+    const categoryPutDataNoParentId = {
+      url: `${serverBaseUrl}/category/670cd6957d3afeb10458f6a7`,
+      json: {}
+    };
+
+    beforeEach(() => {
+      stubCategory = sinon.stub(CategoryController, 'deleteCategory')
+        .callsFake((req, res) => {
+          res.set('Content-Type', 'application/json');
+
+          if (!req.params.id) {
+            return res.status(400).send({
+              error: 'Invalid category\'s id',
+            });
+          }
+
+          if (!req.body.parentId) {
+            return res.status(400).send({
+              error: 'No parent\'s id',
+            });
+          }
+
+          return res.status(204).send({});
+        });
+    });
+
+    afterEach(() => {
+      stubCategory.restore();
+    });
+
+    it('is the endpoint reachable', (done) => {
+      request.delete(categoryPutData, (err, res, body) => {
+        if (err) return done(err);
+        expect(res).to.have.status(204);
+        done();
+      });
+    });
+
+    it('is the process successfully handled', (done) => {
+      request.delete(categoryPutData, (err, res, body) => {
+        if (err) return done(err);
+        expect(body).to.be.an('undefined');
+        done();
+      });
+    });
+
+    it('is the endpoint able to handle missing parent ID gracefully', (done) => {
+      request.delete(categoryPutDataNoParentId, (err, res, body) => {
+        if (err) return done(err);
+        expect(body).have.property('error', 'No parent\'s id');
         done();
       });
     });

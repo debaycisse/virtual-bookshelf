@@ -302,7 +302,7 @@ class BookshelfController {
       const bookshelfCol = await mongoDbClient.bookshelfCollection();
       const isDeleted = await bookshelfCol
         .deleteOne({ _id: new ObjectId(bookshelfId) });
-      if (isDeleted.deletedCount > 0) {
+      if (Number(isDeleted?.deletedCount) > 0) {
         return res.status(204).json({});
       }
 

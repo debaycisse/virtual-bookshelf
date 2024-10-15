@@ -161,7 +161,7 @@ class CategoryController {
       const categoryCol = await mongoDbClient.categoryCollection();
       const pipline = [
         {
-          $match: { parentId },
+          $match: { parentId: new ObjectId(parentId) },
         },
         {
           $project: {
@@ -302,7 +302,59 @@ class CategoryController {
   }
 
   static async deleteCategory(req, res) {
-    // TODO:
+    res.setHeader('Content-Type', mime.contentType('json'));
+    try {
+      const userData = await Utils.extractJwt(req.headers['X-User']);
+      const parentId = req.body.parentId;
+      if (!parentId) {
+        return res.status(400).json({
+          error: 'Parent ID can not be missing',
+        });
+      }
+
+      if (!(await mongoDbClient.verifyDocType(parentId, 'bookshelf'))) {
+        return res.status(400).json({
+          error: 'Invalid parent ID',
+        });
+      }
+
+      if (!(Utils.ownsBookshelf(userData._id, parentId))) {
+        return res.status(401).json({
+          error: 'Unauthorized access',
+        });
+      }
+
+      const categoryId = req.params.id;
+      if (!categoryId) {
+        return res.status(400).json({
+          error: 'Document\'s id can not be missing',
+        });
+      }
+
+      const isCategoryEmpty = await Utils.isEmpty(categoryId, 'category');
+      if (!isCategoryEmpty) {
+        return res.status(400).json({
+          error: 'Non-empty category can not be deleted',
+        });
+      }
+
+      const categoryCol = await mongoDbClient.categoryCollection();
+      const isDeleted = await categoryCol
+        .deleteOne({ _id: new ObjectId(categoryId) });
+      if (Number(isDeleted?.deletedCount) > 0) {
+        return res.status(204).json({});
+      }
+
+      return res.status(500).json({
+        error: 'Internal server error',
+        detail: 'Can not delete category',
+      });
+    } catch (error) {
+      return res.status(500).json({
+        error: 'Internal server error',
+        detail: error.message,
+      });
+    }
   }
 }
 
