@@ -38,15 +38,15 @@ class BookshelfController {
       const doc = await bookshelfCol.insertOne({
         parentId,
         name: shelfName,
-        dateCreated: dateCreated.toUTCString(),
-        dateModified: dateCreated.toUTCString(),
+        dateCreated: dateCreated.toLocaleString(),
+        dateModified: dateCreated.toLocaleString(),
       });
       return res.status(201).json({
         id: doc.insertedId,
         name: shelfName,
         parentId: parentId,
         message: 'created bookshelf successfully',
-        dateCreated: dateCreated.toUTCString(),
+        dateCreated: dateCreated.toLocaleString(),
         retrieveBookshelfs: `${baseUrl}/bookShelfs`,
         retrieveBookshelf: `${baseUrl}/bookShelf/<id>`,
       });
@@ -240,7 +240,7 @@ class BookshelfController {
       const update = {
         $set: {
           name: shelfName,
-          dateModified: dateModified.toUTCString(),
+          dateModified: dateModified.toLocaleString(),
         },
       };
 

@@ -46,7 +46,7 @@ class UserController{
       name,
       email,
       password: hashedPwd,
-      dateCreated: new Date().toUTCString(),
+      dateCreated: new Date().toLocaleString(),
     };
     const newUserDoc = await Utils.storeDoc(docType, userObj);
     if (!newUserDoc) {

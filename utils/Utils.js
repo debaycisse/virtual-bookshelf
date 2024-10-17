@@ -48,7 +48,6 @@ class Utils {
       }
       return null;
     } catch(err) {
-      console.error('could not create document >> ', err.message);
       return null;
     }
   }
@@ -157,14 +156,14 @@ class Utils {
 
     if (docType === 'bookshelf') {
       existingBooks = await bookCol
-        .find({ bookshelfId: new ObjectId(docId) }).toArray();
+        .find({ bookshelfId: docId }).toArray();
       existingCategories = await categoryCol
-        .find({ parentId: new ObjectId(docId) }).toArray();
+        .find({ parentId: docId }).toArray();
     }
 
     if (docType === 'category') {
       existingBooks = await bookCol
-        .find({ categoryId: new ObjectId(docId) }).toArray();
+        .find({ categoryId: docId }).toArray();
     }
 
 
@@ -180,7 +179,7 @@ class Utils {
         .verifyDocType(userId, 'user');
       const bookshelfExist = await mongoDbClient
         .verifyDocType(bookshelfId, 'bookshelf');
-      
+
       if (!userExist) return false;
       if (!bookshelfExist) return false;
 
@@ -188,7 +187,7 @@ class Utils {
       const bookshelfDoc = await bookshelfCol
         .findOne({ 
           _id: new ObjectId(bookshelfId),
-          ownerId: new ObjectId(userId),
+          parentId: userId,
         });
 
       if (bookshelfDoc) return true;
@@ -241,16 +240,21 @@ class Utils {
       let categoryDoc;
 
       if (operator === '+') {
-        categoryDoc = categoryCol
+        categoryDoc = await categoryCol
           .findOne({ _id: new ObjectId(oldCategoryId) });
+
+        const nBooksVal = categoryDoc.nBooks? categoryDoc.nBooks : 0; 
+
         const filter = { 
           _id: new ObjectId(oldCategoryId) 
         };
+
         const update = {
           $set: {
-            nBooks: Number(categoryDoc.nBooks) + 1,
+            nBooks: Number(nBooksVal) + 1,
           }
         };
+
         await categoryCol.updateOne(filter, update);
         return true;
       }
@@ -258,12 +262,16 @@ class Utils {
       if (operator === '-') {
         categoryDoc = categoryCol
           .findOne({ _id: new ObjectId(oldCategoryId) });
+
+        const nBooksVal = categoryDoc.nBooks? categoryDoc.nBooks : 0; 
+
         const filter = { 
           _id: new ObjectId(oldCategoryId) 
         };
+
         const update = {
           $set: {
-            nBooks: Number(categoryDoc.nBooks) - 1,
+            nBooks: Number(nBooksVal) - 1,
           }
         };
         await categoryCol.updateOne(filter, update);
@@ -275,7 +283,7 @@ class Utils {
         };
         const update2 = {
           $set: {
-            nBooks: Number(categoryDoc.nBooks) + 1,
+            nBooks: Number(nBooksVal) + 1,
           }
         }
         await categoryCol.updateOne(filter2, update2);

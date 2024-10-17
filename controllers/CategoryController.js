@@ -39,10 +39,10 @@ class CategoryController {
       const date = new Date();
       const categoryDoc = {
         name: categoryName,
-        parentId: new ObjectId(parentId),
+        parentId,
         nBooks: 0,
-        dateCreated: date.toUTCString(),
-        dateModified: date.toUTCString(),
+        dateCreated: date.toLocaleString(),
+        dateModified: date.toLocaleString(),
       };
 
       const categoryCol = await mongoDbClient.categoryCollection();
@@ -97,7 +97,7 @@ class CategoryController {
       }
       const filter = {
         _id: new ObjectId(categoryId),
-        parentId: new ObjectId(parentId),
+        parentId,
       }
       const categoryDoc = await mongoDbClient
         .findDoc(filter, 'category');
@@ -161,7 +161,7 @@ class CategoryController {
       const categoryCol = await mongoDbClient.categoryCollection();
       const pipline = [
         {
-          $match: { parentId: new ObjectId(parentId) },
+          $match: { parentId: parentId },
         },
         {
           $project: {
@@ -263,12 +263,12 @@ class CategoryController {
 
       const filter = {
         _id: new ObjectId(categoryId),
-        parentId: new ObjectId(parentId),
+        parentId,
       };
 
       const dateModified = new Date();
 
-      const update = { $set: { dateModified: dateModified.toUTCString() } };
+      const update = { $set: { dateModified: dateModified.toLocaleString() } };
       if (req.body.name) update.$set['name'] = req.body.name;
       if (req.body.nBooks) update.$set['nBooks'] = req.body.nBooks;
 
