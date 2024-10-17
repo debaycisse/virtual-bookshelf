@@ -1,5 +1,6 @@
 require('dotenv').config();
 const bcrypt = require('bcrypt');
+const fs = require('fs').promises;
 const { ObjectId } = require('mongodb');
 const jwt = require('jsonwebtoken');
 const mongoDbClient = require('./mongo');
@@ -196,6 +197,124 @@ class Utils {
       return false;
     }
   }
+
+  static async ownsCategory(userId, categoryId) {
+    try {
+      const userExist = await mongoDbClient
+        .verifyDocType(userId, 'user');
+      const categoryExist = await mongoDbClient
+        .verifyDocType(categoryId, 'category');
+
+      if (!userExist) return false;
+      if (!categoryExist) return false;
+
+      const categoryCol = await mongoDbClient.categoryCollection();
+      const categoryDoc = await categoryCol
+        .findOne({ _id: new ObjectId(categoryId) });
+      if (!categoryDoc) return false;
+      // parent id of a category is a bookshelf
+      const categoryParentId = categoryDoc.parentId;
+      const isFound = await this.ownsBookshelf(userId, categoryParentId);
+      if (isFound) return true;
+    } catch (error) {
+      return false;
+    }
+  }
+
+  static async bookshelfOwnsCategory(bookshelfId, categoryId) {
+    try {
+      const categoryCol = await mongoDbClient.categoryCollection();
+      const categoryDoc = await categoryCol
+        .findOne({ _id: new ObjectId(categoryId)});
+      const categoryParentId = categoryDoc.parentId;
+      return categoryParentId === bookshelfId
+    } catch (error) {
+      return false;
+    }
+  }
+
+  static async updateCategoryBookCount(
+    oldCategoryId,
+    newCategoryId,
+    operator) {
+      const categoryCol = await mongoDbClient.categoryCollection();
+      let categoryDoc;
+
+      if (operator === '+') {
+        categoryDoc = categoryCol
+          .findOne({ _id: new ObjectId(oldCategoryId) });
+        const filter = { 
+          _id: new ObjectId(oldCategoryId) 
+        };
+        const update = {
+          $set: {
+            nBooks: Number(categoryDoc.nBooks) + 1,
+          }
+        };
+        await categoryCol.updateOne(filter, update);
+        return true;
+      }
+
+      if (operator === '-') {
+        categoryDoc = categoryCol
+          .findOne({ _id: new ObjectId(oldCategoryId) });
+        const filter = { 
+          _id: new ObjectId(oldCategoryId) 
+        };
+        const update = {
+          $set: {
+            nBooks: Number(categoryDoc.nBooks) - 1,
+          }
+        };
+        await categoryCol.updateOne(filter, update);
+
+        categoryDoc = categoryCol
+          .findOne({ _id: new ObjectId(newCategoryId) });
+        const filter2 = {
+          _id: new ObjectId(newCategoryId),
+        };
+        const update2 = {
+          $set: {
+            nBooks: Number(categoryDoc.nBooks) + 1,
+          }
+        }
+        await categoryCol.updateOne(filter2, update2);
+        return true;
+      }
+
+      if (!operator) {
+        categoryDoc = categoryCol
+          .findOne({ _id: new ObjectId(oldCategoryId) });
+        const filter = { 
+          _id: new ObjectId(oldCategoryId) 
+        };
+        const update = {
+          $set: {
+            nBooks: Number(categoryDoc.nBooks) - 1,
+          }
+        };
+        await categoryCol.updateOne(filter, update);
+        return true;
+      }
+
+      return false;
+  }
+
+  static async uploadBook(pathToFile) {
+    try {
+      const fileStoragepath = './bookshelf_folder/books';
+      await fs.access(pathToFile, fs.constants.R_OK);
+      await fs.mkdir(fileStoragepath, { recursive: true });
+      const filePathLength = pathToFile.split('/').length;
+      const fileName = pathToFile.split('/')[filePathLength - 1];
+      const fileFullPath = `${fileStoragepath}/${fileName}`;
+      const fileData = await fs.readFile(pathToFile);
+      await fs.writeFile(fileFullPath, fileData);
+      return fileFullPath;
+    } catch (error) {
+      throw error;
+    }
+  } 
 }
 
 module.exports = Utils;

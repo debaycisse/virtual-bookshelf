@@ -2,6 +2,7 @@ const { Router } = require('express');
 const UserController = require('../controllers/UserController');
 const BookshelfController = require('../controllers/BookshelfController');
 const CategoryController = require('../controllers/CategoryController');
+const BookController = require('../controllers/BookController');
 
 const protectedRoutes = Router();
 BookshelfController;
@@ -47,6 +48,10 @@ protectedRoutes.put('/category/:id', async (req, res) => {
 
 protectedRoutes.delete('/category/:id', async (req, res) => {
   await CategoryController.deleteCategory(req, res);
+});
+
+protectedRoutes.post('/book', async (req, res) => {
+  await BookController.createBook(req, res);
 });
 
 module.exports = protectedRoutes;
