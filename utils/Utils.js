@@ -215,6 +215,7 @@ class Utils {
       const categoryParentId = categoryDoc.parentId;
       const isFound = await this.ownsBookshelf(userId, categoryParentId);
       if (isFound) return true;
+      return false;
     } catch (error) {
       return false;
     }
@@ -245,7 +246,7 @@ class Utils {
 
         const nBooksVal = categoryDoc.nBooks? categoryDoc.nBooks : 0; 
 
-        const filter = { 
+        const filter = {
           _id: new ObjectId(oldCategoryId) 
         };
 
