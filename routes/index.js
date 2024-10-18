@@ -54,4 +54,8 @@ protectedRoutes.post('/book', async (req, res) => {
   await BookController.createBook(req, res);
 });
 
+protectedRoutes.get('/book/:id', async (req, res) => {
+  await BookController.getBook(req, res);
+});
+
 module.exports = protectedRoutes;

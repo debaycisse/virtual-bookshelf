@@ -14,22 +14,17 @@ describe('Book Controller Endpoints Testing', () => {
   const bookshelfIds = {
     bookshelf001: {
       id: 'bookshelf001',
-      categoryIds: [
-        '975ed90f0fd873a321d2bf3ed',
-        '975ed90f0fd873a321d2bf3de'
-      ]
+      categoryIds: ['975ed90f0fd873a321d2bf3ed', '975ed90f0fd873a321d2bf3de'],
     },
     bookshelf002: {
       id: 'bookshelf002',
-      categoryIds: [
-        '976ed90f0fd873a321d2bf3ed',
-        '977ed90f0fd873a321d2bf3de'
-      ]
-    }
+      categoryIds: ['976ed90f0fd873a321d2bf3ed', '977ed90f0fd873a321d2bf3de'],
+    },
   };
 
   before(() => {
-    stubMiddleWare = sinon.stub(Utils, 'authentication')
+    stubMiddleWare = sinon
+      .stub(Utils, 'authentication')
       .callsFake((req, res, next) => {
         req.headers['X-User'] = 'jwt';
         next();
@@ -45,9 +40,7 @@ describe('Book Controller Endpoints Testing', () => {
     let bookPostDataNoBookshelf;
     let bookPostDataWrongCategory;
 
-
     beforeEach(() => {
-
       bookPostData = {
         url: `${serverBaseUrl}/book`,
         json: {
@@ -57,7 +50,7 @@ describe('Book Controller Endpoints Testing', () => {
           numberOfPages: 107,
           categoryId: '975ed90f0fd873a321d2bf3ed',
           bookshelfId: 'bookshelf001',
-        }
+        },
       };
       bookPostDataNoBookshelf = {
         url: `${serverBaseUrl}/book`,
@@ -67,7 +60,7 @@ describe('Book Controller Endpoints Testing', () => {
           publishedInYear: 2020,
           numberOfPages: 107,
           categoryId: '975ed90f0fd873a321d2bf3ed',
-        }
+        },
       };
       bookPostDataWrongCategory = {
         url: `${serverBaseUrl}/book`,
@@ -78,26 +71,28 @@ describe('Book Controller Endpoints Testing', () => {
           numberOfPages: 107,
           categoryId: 'nonexistingCategory',
           bookshelfId: 'bookshelf001',
-        }
+        },
       };
 
-      stubBook = sinon.stub(BookController, 'createBook')
+      stubBook = sinon
+        .stub(BookController, 'createBook')
         .callsFake((req, res) => {
+          res.set('Content-Type', 'application/json');
           const categoryId = req?.body?.categoryId;
           const bookshelfId = req?.body?.bookshelfId;
-          
+
           if (!bookshelfId) {
             return res.status(400).send({
               error: 'Bookshelf\'s ID can not be missing',
             });
           }
-          
+
           if (!bookshelfIds[bookshelfId]) {
             return res.status(400).send({
               error: 'Invalid bookshelf',
             });
           }
-          
+
           if (categoryId) {
             if (!bookshelfIds[bookshelfId].categoryIds.includes(categoryId)) {
               return res.status(400).send({
@@ -108,7 +103,7 @@ describe('Book Controller Endpoints Testing', () => {
           return res.status(201).send({
             id: 'qwerty-123-456-7890',
             name: req.body.name,
-            auther: req.body.author,
+            author: req.body.author,
             publishedInYear: req.body.publishedInYear,
             numberOfPages: req.body.numberOfPages,
             bookshelfId,
@@ -117,7 +112,7 @@ describe('Book Controller Endpoints Testing', () => {
             dateCreated: 'Thursday 18, October, 2024',
             dateModified: 'Thursday 18, October, 2024',
             reriveAllBooks: `${serverBaseUrl}/books`,
-            retrieveBook: `${serverBaseUrl}/books`
+            retrieveBook: `${serverBaseUrl}/book/<id>`,
           });
         });
     });
@@ -137,7 +132,10 @@ describe('Book Controller Endpoints Testing', () => {
     it('is a missing bookshelf\'s ID checked', (done) => {
       request.post(bookPostDataNoBookshelf, (err, res, body) => {
         if (err) return done(err);
-        expect(body).to.have.property('error', 'Bookshelf\'s ID can not be missing');
+        expect(body).to.have.property(
+          'error',
+          'Bookshelf\'s ID can not be missing'
+        );
         done();
       });
     });
@@ -158,5 +156,87 @@ describe('Book Controller Endpoints Testing', () => {
       });
     });
   });
-});
 
+  describe('Tests GET /api/v1/book', () => {
+    let stubBook;
+    let bookGetData;
+    let bookGetDataNoUrl;
+    let bookGetDataNoBookshelfId;
+
+    beforeEach(() => {
+      bookGetData = {
+        url: `${serverBaseUrl}/book/67117af4183a53cf798f0bf2`,
+        json: {
+          bookshelfId: 'bookshelf002',
+          categoryId: '976ed90f0fd873a321d2bf3ed',
+        },
+      };
+
+      bookGetDataNoBookshelfId = {
+        url: `${serverBaseUrl}/book/67117af4183a53cf798f0bf2`,
+        json: {
+          categoryId: '976ed90f0fd873a321d2bf3ed',
+        },
+      };
+
+      stubBook = sinon.stub(BookController, 'getBook').callsFake((req, res) => {
+        res.set('Content-Type', 'application/json');
+        const categoryId = req?.body?.categoryId;
+        const bookshelfId = req?.body?.bookshelfId;
+
+        if (!req.params.id) {
+          return res.status(400).send({
+            error: 'Book\'s ID can not be missing',
+          });
+        }
+        if (!bookshelfId) {
+          return res.status(400).send({
+            error: 'Book\'s bookshelf can not be missing',
+          });
+        }
+        if (
+          categoryId &&
+          !bookshelfIds[bookshelfId].categoryIds.includes(categoryId)
+        ) {
+          return res.status(400).send({
+            error: 'Invalid category\'s ID',
+          });
+        }
+        return res.status(200).send({
+          id: 'qwerty-123-456-7890',
+          name: 'The cave of a million eye',
+          author: 'Egele Michael',
+          publishedInYear: 202,
+          numberOfPages: 73,
+          bookshelfId: 'bookshelf002',
+          categoryId: '976ed90f0fd873a321d2bf3ed',
+          path: '/bookshelf/books/testBook.pdf',
+          dateCreated: 'Thursday 18, October, 2024',
+          dateModified: 'Thursday 18, October, 2024',
+          reriveAllBooks: `${serverBaseUrl}/books`,
+          createBook: `${serverBaseUrl}/book`,
+        });
+      });
+    });
+
+    afterEach(() => {
+      stubBook.restore();
+    });
+
+    it('is the endpoint reachable', (done) => {
+      request.get(bookGetData, (err, res, body) => {
+        if (err) return done(err);
+        expect(res).to.have.status(200);
+        done();
+      });
+    });
+
+    it('is request checked for missing book\'s ID', (done) => {
+      request.get(bookGetDataNoBookshelfId, (err, res, body) => {
+        if (err) return done(err);
+        expect(body).to.have.property('error', 'Book\'s bookshelf can not be missing');
+        done();
+      });
+    });
+  });
+});
