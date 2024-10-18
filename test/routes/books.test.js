@@ -157,10 +157,9 @@ describe('Book Controller Endpoints Testing', () => {
     });
   });
 
-  describe('Tests GET /api/v1/book', () => {
+  describe('Tests GET /api/v1/book/<id>', () => {
     let stubBook;
     let bookGetData;
-    let bookGetDataNoUrl;
     let bookGetDataNoBookshelfId;
 
     beforeEach(() => {
@@ -239,4 +238,111 @@ describe('Book Controller Endpoints Testing', () => {
       });
     });
   });
+
+  describe('Tests GET /api/v1/books', () => {
+    let stubBook;
+    let bookGetData;
+    let bookGetDataNoBookshelfId;
+
+    beforeEach(() => {
+      bookGetData = {
+        url: `${serverBaseUrl}/books`,
+        json: {
+          bookshelfId: 'bookshelf001',
+          categoryId: '975ed90f0fd873a321d2bf3de',
+        }
+      };
+
+      bookGetDataNoBookshelfId = {
+        url: `${serverBaseUrl}/books`,
+        json: {
+          categoryId: '975ed90f0fd873a321d2bf3de',
+        }
+      };
+      
+      stubBook = sinon.stub(BookController, 'getBooks')
+        .callsFake((req, res) => {
+          res.set('Content-Type', 'application/json');
+
+          const bookshelfId = req.body.bookshelfId;
+          if (!bookshelfId) {
+            return res.status(400).json({
+              error: 'Bookshelf\'s ID can not be missing',
+            });
+          }
+
+          const categoryId = req.body.categoryId;
+          const isCategoryInBookshelf = bookshelfIds[bookshelfId]
+            .categoryIds.includes(categoryId);
+          if (categoryId && !isCategoryInBookshelf) {
+            return res.status(400).json({
+              error: 'Category is not located in a given bookshelf',
+            });
+          }
+
+          return res.status(200).send({
+            books: [
+              {
+                id: 'qwerty-123-456-7890',
+                name: 'The cave of a million eye',
+                author: 'Egele Michael',
+                publishedInYear: 202,
+                numberOfPages: 73,
+                bookshelfId: 'bookshelf002',
+                categoryId: '976ed90f0fd873a321d2bf3ed',
+                path: '/bookshelf/books/testBook.pdf',
+                dateCreated: 'Thursday 18, October, 2024',
+                dateModified: 'Thursday 18, October, 2024',
+              },
+              {
+                id: 'qwerty-123-456-7890',
+                name: 'The cave of a million eye',
+                author: 'Egele Michael',
+                publishedInYear: 202,
+                numberOfPages: 73,
+                bookshelfId: 'bookshelf002',
+                categoryId: '976ed90f0fd873a321d2bf3ed',
+                path: '/bookshelf/books/testBook.pdf',
+                dateCreated: 'Thursday 18, October, 2024',
+                dateModified: 'Thursday 18, October, 2024',
+              }
+            ],
+            currentPage: 1,
+            previousPage: null,
+            nextPage: null,
+            retrieveBook: `${serverBaseUrl}/book/<id>`,
+            removeBook: `${serverBaseUrl}/book/<id>`,
+          });
+        });
+    });
+
+    afterEach(() => {
+      stubBook.restore();
+    });
+
+    it('is the endpoint reachable', (done) => {
+      request.get(bookGetData, (err, res, body) => {
+        if (err) return done(err);
+        expect(res).to.have.status(200);
+        done();
+      });
+    });
+
+    it ('is the body contain the book documents', (done) => {
+      request.get(bookGetData, (err, res, body) => {
+        if (err) return done(err);
+        expect(body.books).to.be.an('array');
+        expect(body.books.length > 0).to.be.true;
+        done();
+      });
+    });
+
+    it('is a missing bookshelf request returned with error', (done) => {
+      request.get(bookGetDataNoBookshelfId, (err, rea, body) => {
+        if (err) return done(err);
+        expect(body).to.have.property('error', 'Bookshelf\'s ID can not be missing');
+        done();
+      });
+    });
+  })
 });

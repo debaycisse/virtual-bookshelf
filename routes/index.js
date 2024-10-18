@@ -58,4 +58,8 @@ protectedRoutes.get('/book/:id', async (req, res) => {
   await BookController.getBook(req, res);
 });
 
+protectedRoutes.get('/books', async (req, res) => {
+  await BookController.getBooks(req, res);
+});
+
 module.exports = protectedRoutes;
