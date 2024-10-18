@@ -281,7 +281,155 @@ class BookController {
   }
 
   static async getBooks(req, res) {
-    // TODO: Implementation
+    res.setHeader('Content-Type', mime.contentType('json'));
+    try {
+      const userData = await Utils.extractJwt(req.headers['X-User']);
+      let filters;
+      const maxItems = 10;
+      let { page } = req.query;
+
+      if(!page) {
+        page = 0;
+      } else {
+        page = Number(page);
+      }
+
+      /**
+       * Ensures that bookshelf is provided
+       */
+      const bookshelfId = req.body.bookshelfId;
+      if (!bookshelfId) {
+        return res.status(400).json({
+          error: 'Bookshelf can not be missing',
+        });
+      }
+
+      const isBookshelf = await mongoDbClient
+        .verifyDocType(bookshelfId, 'bookshelf');
+      if (!isBookshelf) {
+        return res.status(400).json({
+          error: 'Bookshelf does not exist',
+        });
+      }
+
+      /**
+       * Does the current user owns the Bookshelf
+       */
+      const userOwnsBookshelf = await Utils
+      .ownsBookshelf(userData._id, bookshelfId);
+      if (!userOwnsBookshelf) {
+        return res.status(401).json({
+          error: 'Unauthorized bookshelf access'
+        });
+      }
+
+      /**
+       * If category's ID is given, does the current user possess the category
+       */
+      const categoryId = req.body.categoryId;
+      if (categoryId) {
+        const isCategory = await mongoDbClient
+          .verifyDocType(categoryId, 'category');
+        if (!isCategory) {
+          return res.status(404).json({
+            error: 'Category does not exist',
+          });
+        }
+
+        /**
+         * Is a given category located in a given bookshelf
+         */
+        if (!await Utils.bookshelfOwnsCategory(bookshelfId, categoryId)) {
+          return res.status(404).json({
+            error: 'Category does not exist in a given bookshelf',
+          });
+        }
+        filters = {
+          bookshelfId,
+          categoryId
+        };
+
+      } else {
+        filters = {
+          bookshelfId
+        }
+      }
+      const pipeline = [
+        {
+          $match: filters
+        },
+        {
+          $project: {
+            id: '$_id', name: 1, author: 1, publishedInYear: 1,
+            numberOfPages: 1, bookshelfId: 1, categoryId: 1,
+            bookPath: 1, dateCreated: 1, dateModified: 1, _id: 0,
+          },
+        },
+        {
+          $limit: maxItems,
+        },
+        {
+          $skip: page * maxItems,
+        }
+      ];
+
+      let bookList;
+      const bookCol = await mongoDbClient.bookCollection();
+      const books = await bookCol
+        .aggregate(pipeline).toArray();
+
+      if (books.length > 0) {
+        bookList = books.map(doc => {
+          return {
+            id: doc.id,
+            name: doc.name,
+            author: doc.author,
+            publishedInYear: doc.publishedInYear,
+            numberOfPages: doc.numberOfPages,
+            bookshelfId: doc.bookshelfId,
+            categoryId: doc.categoryId,
+            bookPath: doc.bookPath,
+            dateCreated: doc.dateCreated,
+            dateModified: doc.dateModified
+          };
+        });
+      }
+
+      let nextPage = null;
+      const processedDocCount = page * maxItems + books.length;
+      const totalDocCount = await bookCol
+        .countDocuments({ filters });
+
+      if (totalDocCount > processedDocCount) {
+        nextPage = page + 1;
+      }
+
+      let prevPage = 0;
+      const isSkipped = (page * maxItems) > 0;
+      if (isSkipped) prevPage = page + 1;
+
+      const currentPage = page + 1;
+
+      let previousPage = null;
+      if (page > 0) {
+        previousPage = `${baseUrl}/books?page=${prevPage}`
+      }
+
+      return res.status(200).json({
+        books: bookList,
+        currentPage,
+        previousPage,
+        nextPage: nextPage? `${baseUrl}/books?page=${nextPage}` : null,
+        retrieveBook: `${baseUrl}/book/<id>`,
+        removeBook: `${baseUrl}/book/<id>`,
+      });
+
+    } catch (error) {
+      return res.status(500).json({
+        error: 'Internal server error',
+        detail: error.message,
+      });
+    }
   }
 
   static async modifyBook(req, res) {
