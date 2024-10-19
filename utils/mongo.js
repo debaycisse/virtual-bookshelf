@@ -64,6 +64,7 @@ class MongoDBClient {
     if (docType === 'bookshelf') docCol = await this.bookshelfCollection();
     if (docType === 'category') docCol = await this.categoryCollection();
     if (docType === 'user') docCol = await this.userCollection();
+    if (docType === 'book') docCol = this.bookCollection();
     try {
       const doc = await docCol.findOne({  _id: new ObjectId(docId) });
       if (doc) return doc._id;

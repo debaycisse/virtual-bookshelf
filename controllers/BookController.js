@@ -145,6 +145,14 @@ class BookController {
         });
       }
 
+      const isBook = await mongoDbClient
+         .verifyDocType(bookId, 'book');
+      if (!isBook) {
+        return res.status(404).json({
+          error: 'Book does not exist',
+        });
+      }
+
       /**
        * Ensures that bookshelf is provided
        */
@@ -221,6 +229,18 @@ class BookController {
           });
         }
       } else {
+        /**
+         * Does the book's categoryId exist in the bookshelf
+         */
+        const tempBook = await bookCol.find({ _id: new ObjectId(bookId) });
+        const bookUsedCategoryId = tempBook?.categoryId;
+        if (bookUsedCategoryId) {
+          if (!await Utils.bookshelfOwnsCategory(bookshelfId, bookUsedCategoryId)) {
+            return res.status(404).json({
+              error: 'Category does not exist in a given bookshelf',
+            });
+          }
+        }
         /**
          * Find the book, using both its ID, and the given bookshelf's ID,
          * since no category is given
@@ -433,7 +453,159 @@ class BookController {
   }
 
   static async modifyBook(req, res) {
-    // TODO: Implementation
+    res.setHeader('Content-Type', mime.contentType('json'));
+    try {
+      const userData = await Utils.extractJwt(req.headers['X-User']);
+      let tempBook;
+      let bookUsedCategoryId
+      let filter;
+      const bookCol = await mongoDbClient.bookCollection();
+      const bookId = req.params.id;
+      /**
+       * Is the book's ID valid
+       */
+      if (!bookId) {
+        return res.status(400).json({
+          error: 'Book\'s  ID can not be missing',
+        });
+      }
+      const isBook = await mongoDbClient
+         .verifyDocType(bookId, 'book');
+      if (!isBook) {
+        return res.status(404).json({
+          error: 'Book does not exist',
+        });
+      }
+      const bookshelfId = req.body.bookshelfId;
+
+      if (!bookshelfId) {
+        return res.status(400).json({
+          error: 'Bookshelf can not be missing',
+        });
+      }
+      
+      const isBookshelf = await mongoDbClient
+        .verifyDocType(bookshelfId, 'bookshelf');
+      if (!isBookshelf) {
+        return res.status(404).json({
+          error: 'Bookshelf does not exist',
+        });
+      }
+      const userOwnsBookshelf = await Utils
+      .ownsBookshelf(userData._id, bookshelfId);
+      if (!userOwnsBookshelf) {
+        return res.status(401).json({
+          error: 'Unauthorized bookshelf access'
+        });
+      }
+      
+      const categoryId = req.body.categoryId;
+      if (categoryId) {
+        const isCategory = await mongoDbClient
+          .verifyDocType(categoryId, 'category');
+        if (!isCategory) {
+          return res.status(404).json({
+            error: 'Category does not exist',
+          });
+        }
+
+        if (!await Utils.bookshelfOwnsCategory(bookshelfId, categoryId)) {
+          return res.status(404).json({
+             error: 'Category does not exist in a given bookshelf',
+          });
+        }
+        filter = {
+          _id: new ObjectId(bookId),
+          bookshelfId,
+          categoryId,
+        };
+      } else {
+        /**
+         * Does the book's categoryId exist in the given bookshelf
+         */
+        tempBook = await bookCol.find({ _id: new ObjectId(bookId) });
+        bookUsedCategoryId = tempBook?.categoryId;
+        if (bookUsedCategoryId) {
+          if (!await Utils.bookshelfOwnsCategory(bookshelfId, bookUsedCategoryId)) {
+            return res.status(404).json({
+              error: 'Category does not exist in a given bookshelf',
+            });
+          }
+        }
+
+        filter = {
+         existingCategoryId  _id: new ObjectId(bookId),
+           bookshelfId,
+        };
+      }
+      const existingCategoryId = tempBook.categoryId;
+      /**
+       * Updates the book
+       */
+      const {
+        name, author, publishedInYear, numberOfPages,
+      } = req.body;
+      const date = new Date();      
+      const update = {
+        $set: {
+          name,
+          author,
+          categoryId: categoryId? categoryId : bookUsedCategoryId,
+          dateModified: date.toLocaleString(),
+        },
+      };
+
+      /**
+       * Validate the correctness of both publishedInYear and numberOfPages
+       */
+      const publishedInYearVal = Number(publishedInYear);
+      const numberOfPagesVal = Number(numberOfPages);
+      if (typeof publishedInYearVal === 'number') {
+        update.$set['publishedInYear'] = publishedInYearVal;
+      }
+      if (typeof numberOfPagesVal === 'number') {
+        update.$set['numberOfPages'] = numberOfPagesVal;
+      }
+
+      const isUpdated = await bookCol.updateOne(filter, update);
+      if (isUpdated.modifiedCount > 0) {
+        if (categoryId !== undefined) {
+          if (existingCategoryId === categoryId) {
+            await Utils.updateCategoryBookCount(
+              existingCategoryId, categoryId, '+'
+            );
+          } else {
+            await Utils.updateCategoryBookCount(
+              existingCategoryId, categoryId, '-'
+            );
+          }
+        }
+      }
+      /**
+       * Retrieve and return the updated book
+       */
+      const updatedBook = await bookCol
+        .findOne({ _id new Object(bookId) });
+      return res.status(200).json({
+        id: updateBook._id,
+        name: updateBook.name,
+        author: updateBook.author,
+        publishedInYear: updateBook.publishedInYear,
+        numberOfPages: updateBook.numberOfPages,
+        bookshelfId: updateBook.bookshelfId,
+        categoryId: updateBook.categoryId,
+        bookPath: updateBook.bookPath,
+        dateCreated: updateBook.dateCreated,
+        dateModified: updateBook.dateModified,
+        retrieveAllBooks: `${baseUrl}/books`,
+        retrieveBook: `${baseUrl}/book`,
+      });
+    } catch (error) {
+      return res.status(500).json({
+        error: 'Internal server error',
+        detail: error.message
+     });
+    }
   }
 
   static async deleteBook(req, res) {
