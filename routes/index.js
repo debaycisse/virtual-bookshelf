@@ -66,5 +66,8 @@ protectedRoutes.put('/book/:id', async (req, res) => {
   await BookController.modifyBook(req, res);
 });
 
+protectedRoutes.delete('/book/:id', async (req, res) => {
+  await BookController.deleteBook(req, res);
+});
 
 module.exports = protectedRoutes;

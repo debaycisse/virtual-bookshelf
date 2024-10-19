@@ -461,4 +461,88 @@ describe('Book Controller Endpoints Testing', () => {
     });
   });
 
+  describe('Tests DELETE /api/v1/book', () => {
+    let stubBook;
+    let bookDeleteData;
+    let bookDeleteDataNoBookshelf;
+
+    bookDeleteData = {
+      url: `${serverBaseUrl}/book/67117af4183a53cf798f0bf2`,
+      json: {
+        bookshelfId: 'bookshelf001',
+        categoryId: '975ed90f0fd873a321d2bf3ed', 
+      }
+    };
+
+    bookDeleteDataNoBookshelf = {
+      url: `${serverBaseUrl}/book/67117af4183a53cf798f0bf2`,
+      json: {
+        categoryId: '975ed90f0fd873a321d2bf3ed', 
+      }
+    };
+
+    beforeEach(() => {
+      stubBook = sinon.stub(BookController, 'deleteBook')
+        .callsFake((req, res) => {
+          res.set('Content-Type', 'application/json');
+          if (!req.params.id) {
+            return res.status(400).json({
+              error: 'Book\'s ID can not be missing',
+            });
+          }
+          const bookshelfId = req?.body?.bookshelfId;
+          if (!bookshelfId) {
+            return res.status(400).json({
+              error: 'Bookshelf\'s ID can not be missing',
+            });
+          }
+          const categoryId = req?.body?.categoryId;
+          if (categoryId &&
+            !bookshelfIds[bookshelfId]?.categoryIds.includes(categoryId)
+          ) {
+            return res.status(400).json({
+              error: 'Invalid categoryId'
+            });
+          }
+
+          return res.status(201).json({});
+        });
+    });
+
+    afterEach(() => {
+      stubBook.restore();
+    });
+
+    it('is the endpoint reachable', (done) => {
+      request.delete(bookDeleteData, (err, res, body) => {
+        if (err) return done(err);
+        expect(res).to.have.status(201);
+        done();
+      });
+    });
+
+    it('is the content type correct', (done) => {
+      request.delete(bookDeleteData, (err, res, body) => {
+        if (err) return done(err);
+        expect(res).to.have.header('Content-Type', 'application/json; charset=utf-8');
+        done();
+      });
+    });
+
+    it('is there no body returned', (done) => {
+      request.delete(bookDeleteData, (err, res, body) => {
+        if (err) return done(err);
+        expect(Object.keys(body).length).to.be.equal(0);
+        done();
+      });
+    });
+
+    it('is a missing bookshelf detected', (done) => {
+      request.delete(bookDeleteDataNoBookshelf, (err, res, body) => {
+        if (err) return done(err);
+        expect(body).to.have.property('error', 'Bookshelf\'s ID can not be missing');
+        done();
+      })
+    })
+  });
 });
