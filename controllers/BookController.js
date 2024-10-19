@@ -94,7 +94,7 @@ class BookController {
         name, author, publishedInYear, numberOfPages,
         bookshelfId: bookshelfId,
         categoryId: categoryId? categoryId : null,
-        path: fileFullePath, dateCreated: date.toLocaleString(),
+        bookPath: fileFullePath, dateCreated: date.toLocaleString(),
         dateModified: date.toLocaleString(),
       })
       // Then update the affected category's nBooks' value -> Utils.updateCategoryBookCount
@@ -355,7 +355,6 @@ class BookController {
             error: 'Category does not exist',
           });
         }
-
         /**
          * Is a given category located in a given bookshelf
          */
@@ -374,6 +373,7 @@ class BookController {
           bookshelfId
         }
       }
+
       const pipeline = [
         {
           $match: filters
@@ -461,6 +461,7 @@ class BookController {
       let filter;
       const bookCol = await mongoDbClient.bookCollection();
       const bookId = req.params.id;
+
       /**
        * Is the book's ID valid
        */
@@ -471,6 +472,7 @@ class BookController {
       }
       const isBook = await mongoDbClient
          .verifyDocType(bookId, 'book');
+      
       if (!isBook) {
         return res.status(404).json({
           error: 'Book does not exist',
@@ -503,6 +505,7 @@ class BookController {
       if (categoryId) {
         const isCategory = await mongoDbClient
           .verifyDocType(categoryId, 'category');
+        
         if (!isCategory) {
           return res.status(404).json({
             error: 'Category does not exist',
@@ -519,6 +522,7 @@ class BookController {
           bookshelfId,
           categoryId,
         };
+
       } else {
         /**
          * Does the book's categoryId exist in the given bookshelf
@@ -534,11 +538,13 @@ class BookController {
         }
 
         filter = {
-         existingCategoryId  _id: new ObjectId(bookId),
-           bookshelfId,
+          _id: new ObjectId(bookId),
+          bookshelfId,
         };
       }
-      const existingCategoryId = tempBook.categoryId;
+
+      const existingCategoryId = tempBook?.categoryId? 
+        tempBook?.categoryId : categoryId;
       /**
        * Updates the book
        */
@@ -585,18 +591,19 @@ class BookController {
        * Retrieve and return the updated book
        */
       const updatedBook = await bookCol
-        .findOne({ _id new Object(bookId) });
+        .findOne({ _id: new ObjectId(bookId) });
+      console.log(`${JSON.stringify(updatedBook)}`)
       return res.status(200).json({
-        id: updateBook._id,
-        name: updateBook.name,
-        author: updateBook.author,
-        publishedInYear: updateBook.publishedInYear,
-        numberOfPages: updateBook.numberOfPages,
-        bookshelfId: updateBook.bookshelfId,
-        categoryId: updateBook.categoryId,
-        bookPath: updateBook.bookPath,
-        dateCreated: updateBook.dateCreated,
-        dateModified: updateBook.dateModified,
+        id: updatedBook._id,
+        name: updatedBook.name,
+        author: updatedBook.author,
+        publishedInYear: updatedBook.publishedInYear,
+        numberOfPages: updatedBook.numberOfPages,
+        bookshelfId: updatedBook.bookshelfId,
+        categoryId: updatedBook.categoryId,
+        bookPath: updatedBook.bookPath,
+        dateCreated: updatedBook.dateCreated,
+        dateModified: updatedBook.dateModified,
         retrieveAllBooks: `${baseUrl}/books`,
         retrieveBook: `${baseUrl}/book`,
       });

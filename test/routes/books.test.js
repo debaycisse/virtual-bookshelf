@@ -346,7 +346,7 @@ describe('Book Controller Endpoints Testing', () => {
     });
   });
 
-  describe('Tests PUT /api/v1/books/<id>', () => {
+  describe('Tests PUT /api/v1/book/<id>', () => {
     let stubBook;
     let bookPutData;
     let bookPutDataNoBookshelfId;
@@ -460,4 +460,5 @@ describe('Book Controller Endpoints Testing', () => {
       });
     });
   });
+
 });
