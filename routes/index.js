@@ -62,4 +62,8 @@ protectedRoutes.get('/books', async (req, res) => {
   await BookController.getBooks(req, res);
 });
 
+protectedRoutes.put('/book/:id', async (req, res) => {
+  await BookController.modifyBook(req, res);
+});
+
 module.exports = protectedRoutes;

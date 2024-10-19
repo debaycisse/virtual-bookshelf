@@ -108,7 +108,7 @@ describe('Book Controller Endpoints Testing', () => {
             numberOfPages: req.body.numberOfPages,
             bookshelfId,
             categoryId,
-            path: '/bookshelf/books',
+            bookPath: '/bookshelf/books',
             dateCreated: 'Thursday 18, October, 2024',
             dateModified: 'Thursday 18, October, 2024',
             reriveAllBooks: `${serverBaseUrl}/books`,
@@ -209,7 +209,7 @@ describe('Book Controller Endpoints Testing', () => {
           numberOfPages: 73,
           bookshelfId: 'bookshelf002',
           categoryId: '976ed90f0fd873a321d2bf3ed',
-          path: '/bookshelf/books/testBook.pdf',
+          bookPath: '/bookshelf/books/testBook.pdf',
           dateCreated: 'Thursday 18, October, 2024',
           dateModified: 'Thursday 18, October, 2024',
           reriveAllBooks: `${serverBaseUrl}/books`,
@@ -290,7 +290,7 @@ describe('Book Controller Endpoints Testing', () => {
                 numberOfPages: 73,
                 bookshelfId: 'bookshelf002',
                 categoryId: '976ed90f0fd873a321d2bf3ed',
-                path: '/bookshelf/books/testBook.pdf',
+                bookPath: '/bookshelf/books/testBook.pdf',
                 dateCreated: 'Thursday 18, October, 2024',
                 dateModified: 'Thursday 18, October, 2024',
               },
@@ -302,7 +302,7 @@ describe('Book Controller Endpoints Testing', () => {
                 numberOfPages: 73,
                 bookshelfId: 'bookshelf002',
                 categoryId: '976ed90f0fd873a321d2bf3ed',
-                path: '/bookshelf/books/testBook.pdf',
+                bookPath: '/bookshelf/books/testBook.pdf',
                 dateCreated: 'Thursday 18, October, 2024',
                 dateModified: 'Thursday 18, October, 2024',
               }
@@ -344,5 +344,120 @@ describe('Book Controller Endpoints Testing', () => {
         done();
       });
     });
-  })
+  });
+
+  describe('Tests PUT /api/v1/books/<id>', () => {
+    let stubBook;
+    let bookPutData;
+    let bookPutDataNoBookshelfId;
+
+    bookPutData = {
+      url: `${serverBaseUrl}/book/67117af4183a53cf798f0bf2`,
+      json: {
+        name: 'New Name',
+        author: 'Corrected Author\'s Name',
+        publishedInYear: 2023,
+        numberOfPages: 93,
+        bookshelfId: 'bookshelf001',
+        categoryId: '975ed90f0fd873a321d2bf3ed',
+      },
+    };
+
+    bookPutDataNoBookshelfId = {
+      url: `${serverBaseUrl}/book/67117af4183a53cf798f0bf2`,
+      json: {
+        name: 'New Name',
+        author: 'Corrected Author\'s Name',
+        publishedInYear: 2023,
+        numberOfPages: 93,
+        categoryId: '975ed90f0fd873a321d2bf3ed',
+      },
+    };
+
+    beforeEach(() => {
+      stubBook = sinon.stub(BookController, 'modifyBook')
+        .callsFake((req, res) => {
+          res.set('Content-Type', 'application/json');
+          const categoryId = req?.body?.categoryId;
+          const bookshelfId = req?.body?.bookshelfId;
+
+          if (!bookshelfId) {
+            return res.status(400).send({
+              error: 'Bookshelf\'s ID can not be missing',
+            });
+          }
+
+          if (!bookshelfIds[bookshelfId]) {
+            return res.status(400).send({
+              error: 'Invalid bookshelf',
+            });
+          }
+
+          if (categoryId) {
+            if (!bookshelfIds[bookshelfId].categoryIds.includes(categoryId)) {
+              return res.status(400).send({
+                error: 'Invalid category\'s ID',
+              });
+            }
+          }
+
+          return res.status(200).send({
+            id: 'qwerty-123-456-7890',
+            name: req.body.name,
+            author: req.body.author,
+            publishedInYear: req.body.publishedInYear,
+            numberOfPages: req.body.numberOfPages,
+            bookshelfId,
+            categoryId: categoryId? categoryId : null,
+            bookPath: '/bookshelf/books/test001.pdf',
+            dateCreated: 'Friday 18, October, 2024',
+            dateModified: 'Saturday 19, October, 2024',
+            retrieveBook: `${serverBaseUrl}/book/<id>`,
+            removeBook: `${serverBaseUrl}/book/<id>`,
+          });          
+        });
+    });
+
+    afterEach(() => {
+      stubBook.restore();
+    });
+
+    it('is the endpoint reachable', (done) => {
+      request.put(bookPutData, (err, res, body) => {
+        if (err) return done(err);
+        expect(res).to.have.status(200);
+        done();
+      });
+    });
+
+    it('does endpoint return expected data', (done) => {
+      request.put(bookPutData, (err, res, body) => {
+        if (err) return done(err);
+        expect(body).to.have.property('name', 'New Name');
+        expect(body).to.have.property('author', 'Corrected Author\'s Name');
+        expect(body.publishedInYear === 2023).to.be.true;
+        expect(body.numberOfPages === 93).to.be.true;
+        const bookshelfId = body.bookshelfId;
+        const categoryId = body.categoryId;
+        expect(bookshelfIds[bookshelfId].categoryIds.includes(categoryId)).to.be.true;
+        done();
+      });
+    });
+
+    it('is a missing bookshelf detected', (done) => {
+      request.put(bookPutDataNoBookshelfId, (err, res, body) => {
+        if (err) return done(err);
+        expect(body).to.have.property('error', 'Bookshelf\'s ID can not be missing');
+        done();
+      });
+    });
+
+    it('does the endpoint return a correct status for bad requests', (done) => {
+      request.put(bookPutDataNoBookshelfId, (err, res, body) => {
+        if (err) return done(err);
+        expect(res).to.have.status(400);
+        done();
+      });
+    });
+  });
 });
