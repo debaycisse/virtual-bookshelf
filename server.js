@@ -10,10 +10,16 @@ const app = express();
 const port = process.env.EXP_PORT;
 app.use(express.json());
 
+/**
+ * The Application route
+ */
 app.get('/api/v1/status', async (req, res) => {
   await AppController.getServerState(req, res);
 });
 
+/**
+ * User unprotected routes
+ */
 app.post('/api/v1/user/register', async (req, res) => {
   await UserController.registerUser(req, res);
 });
@@ -26,6 +32,9 @@ app.post('/api/v1/user/logout', async (req, res) => {
   await UserController.logout(req, res);
 });
 
+/**
+ * Entrance to all protect routes
+ */
 app.use(
   '/api/v1',
   async (req, res, next) => {
@@ -34,6 +43,9 @@ app.use(
   protectedRoutes
 );
 
+/**
+ * Request error handler
+ */
 app.use((err, req, res, next) => {
   res.set('Content-Type', mime.contentType('json'));
   if (err) {

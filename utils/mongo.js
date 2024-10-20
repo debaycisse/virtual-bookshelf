@@ -17,46 +17,100 @@ class MongoDBClient {
       });
   }
 
+  /**
+   * Checks if the database is ready to start accepting queries
+   * @returns true if the database is ready, otherwise false
+   */
   isAvailable() {
     return this.isConnected;
   }
 
+  /**
+   * Creates a user collection, if it does not exist
+   * 
+   * @returns a collection, named users
+   */
   async userCollection() {
     const userCol = await this.db.collection('users');
     return userCol;
   }
 
+  /**
+   * Creates a bookshelf collection, if it does not exist
+   * 
+   * @returns a collection, named user shelfs
+   */
   async bookshelfCollection() {
     const bookshelfCol = await this.db.collection('shelfs');
     return bookshelfCol;
   }
 
+  /**
+   * Creates a book category collection, if it does not exist
+   * 
+   * @returns a collection, named user categories
+   */
   async categoryCollection() {
     const categoryCol = await this.db.collection('categories');
     return categoryCol;
   }
 
+  /**
+   * Creates a book collection, if it does not exist
+   * 
+   * @returns a collection, named books
+   */
   async bookCollection() {
     const bookCol = await this.db.collection('books');
     return bookCol;
   }
 
+  /**
+   * Counts a total number of documents, using the parentId as a filter
+   * 
+   * @param {string} parentId - this is used as a filtering documents
+   * @param {string} docType - a type document (i.e book, category, bookshelf)
+   * @returns the number of documents that match up the filtering
+   */
   async countDoc(parentId, docType) {
     try {
       let docTypeColletion;
+      let numDoc;
       const filter = { parentId };
-  
-      if (docType === 'book') docTypeColletion = this.bookCollection();
-      if (docType === 'category') docTypeColletion = this.categoryCollection();
-      if (docType === 'bookShelf') docTypeColletion = this.bookshelfCollection();
-  
-      const nDoc = (await docTypeColletion).countDocuments(filter);
-      return nDoc;
-    } catch (error) {
+      const bookFilter = { bookshelfId: parentId };
+      
+      if (docType === 'book') docTypeColletion = await this
+        .bookCollection();
+      if (docType === 'category') docTypeColletion = await this
+        .categoryCollection();
+      if (docType === 'bookShelf') docTypeColletion = await this
+        .bookshelfCollection();
+
+      if (docType === 'book') {
+        numDoc = docTypeColletion.countDocuments(bookFilter);
+      }
+      if (docType === 'bookShelf') {
+        numDoc = docTypeColletion.countDocuments(filter);
+      }
+      if (docType === 'category') {
+        numDoc = docTypeColletion.countDocuments(filter);
+      }
+      return numDoc;
+      } catch (error) {
       return 0;
     }
   }
 
+  /**
+   * Verifies that a given document is valid and matches up its given type.
+   * Example: if a docId is given with a docType 'book', then the ID must
+   * exist in book collection
+   * 
+   * @param {*} docId - an ID to look up
+   * @param {*} docType - the collection where to lookup the ID
+   * @returns null if ID is not known to any document, otherwise
+   * an ID of the found document
+   */
   async verifyDocType(docId, docType) {
     let docCol;
 
@@ -73,6 +127,13 @@ class MongoDBClient {
     }
   }
 
+  /**
+   * FInds a document based on the given filtering object
+   * 
+   * @param {*} filterObj - a filtering object to use for the lookup
+   * @param {*} docType  - document's collection where to look
+   * @returns a found document, if not found, null
+   */
   async findDoc(filterObj, docType) {
     let docCol = null;
 

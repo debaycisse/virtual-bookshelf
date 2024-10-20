@@ -25,6 +25,11 @@ class RedisClient {
       })
   }
 
+  /**
+   * Checks if the cache is ready to start taking query
+   * 
+   * @returns true if it is ready, otherwise false
+   */
   isAvailable() {
     return this.isAlive;
   }
@@ -38,6 +43,12 @@ class RedisClient {
     }
   }
 
+  /**
+   * Looks value of a given key
+   * 
+   * @param {string} key - to lookup its value 
+   * @returns a found value, otherwise null
+   */
   async get(key) {
     try {
       const val = await this.redisClient.get(key);
@@ -48,6 +59,12 @@ class RedisClient {
     }
   }
 
+  /**
+   * Deletes a key/value pair from the cache
+   * 
+   * @param {string} key - to the key/value pair to be deleted
+   * @returns null, if operation failed
+   */
   async del(key) {
     try {
       const isDeleted = await this.redisClient.del(key);

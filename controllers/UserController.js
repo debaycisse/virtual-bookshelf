@@ -7,16 +7,28 @@ const redisClient = require('../utils/redis');
 const serverBaseUrl = 'http://127.0.0.1:5000/api/v1';
 
 class UserController{
+  /**
+   * Creates a new user, stores it in the database, and
+   * returns a success message
+   * 
+   * @param {*} req - URL's request object
+   * @param {*} res - URL's response object
+   * @returns a success message upon successful operation
+   */
   static async registerUser(req, res) {
+    /**
+     * Sets a content type for the response object
+     */
     res.setHeader('Content-Type', mime.contentType('json'));
-    const isAvailableMongo = await mongoDbClient.isAvailable();
 
-    if (!isAvailableMongo) {
-      return res.status(500).json({
-        status: 'Server not available',
-        detail: 'Mongo DB is not connected',
-      });
-    }
+    /**
+     * Checks connection to the database and cache database
+     */
+    await Utils.checkConnection(res);
+
+    /**
+     * Retrieves a new user's data and validates them for correctness
+     */
     const {  name, email, password, } = req.body;
     const docType = 'user'
 
@@ -41,6 +53,9 @@ class UserController{
       });
     }
 
+    /**
+     * Hashes a given password and stores the user's data into the database
+     */
     const hashedPwd = await Utils.hashPassword(password);
     const userObj = {
       name,
@@ -62,8 +77,24 @@ class UserController{
     });
   }
 
+  /**
+   * Logs an existing user into the system by providing a login token
+   * to the user. The login token can be used for subsequent request.
+   * 
+   * @param {*} req - URL's request object
+   * @param {*} res - URL's response object
+   * @returns Upon successful operation, login token is returned
+   */
   static async login(req, res) {
     res.setHeader('Content-Type', mime.contentType('json'));
+    /**
+     * Checks connection to the database and cache database
+     */
+    await Utils.checkConnection(res);
+
+    /**
+     * Retrieves user's credentials and validates them
+     */
     const { email, password } = req.body;
 
     if (!email || !password) {
@@ -90,7 +121,8 @@ class UserController{
       });
     }
 
-    const isValidPassword = await Utils.authenticatesPassword(password, userObj.password);
+    const isValidPassword = await Utils
+      .authenticatesPassword(password, userObj.password);
 
     if (!isValidPassword) {
       return res.status(400).json({
@@ -99,6 +131,9 @@ class UserController{
       });
     }
 
+    /**
+     * Generates a token for user's data
+     */
     const jwtToken = await Utils.generateToken(userObj);
 
     if (!jwtToken) {
@@ -108,6 +143,9 @@ class UserController{
       });
     }
 
+    /**
+     * Cache the generated token and generates a login token
+     */
     const userToken = String(uuid.v4());
     const storeSession = redisClient.storeJwt(userToken, jwtToken);
 
@@ -118,6 +156,10 @@ class UserController{
       });
     }
 
+    /**
+     * Pass along the generated login token to the response header and
+     * return success message to indicate success operation status
+     */
     res.setHeader('X-Token', userToken);
     return res.status(200).json({
       message: 'login was successful',
@@ -126,15 +168,29 @@ class UserController{
     });
   }
 
+  /**
+   * Logs an exisitng user out of the system
+   * 
+   * @param {*} req - URL's request object
+   * @param {*} res - URL's response object
+   * @returns a success message to indicate a successful operation status
+   */
   static async logout(req, res) {
     res.setHeader('Content-Type', mime.contentType('json'));
+    /**
+     * Checks connection to the database and cache database
+     */
+    await Utils.checkConnection(res);
 
+    /**
+     * Removes user from cache and tracks operation's status
+     */
     const isDeleted = await Utils.delSessionToken(req);
     
     if (isDeleted === 'No token was found') {
       return res.status(400).json({
         error: 'logout failure',
-        detail: 'No token was found',
+        detail: 'Invalid login token',
       });
     }
     if (isDeleted === 'Authorization header is missing') {
@@ -160,9 +216,24 @@ class UserController{
     });
   }
 
+  /**
+   * Retrieves a user's data from the database
+   * 
+   * @param {*} req - URL's request object
+   * @param {*} res - URL's response object
+   * @returns an object that contains a given user's data
+   */
   static async profile(req, res) {
     res.setHeader('Content-Type', mime.contentType('json'));
+    /**
+     * Checks connection to the database and cache database
+     */
+    await Utils.checkConnection(res);
 
+    /**
+     * Validates a user's header for an expected X-User header.
+     * The header contains a user's data
+     */
     if (!req.headers['X-User']) {
       return res.status(400).json({
         error: 'user\'s data is missing'
@@ -172,16 +243,36 @@ class UserController{
     const userData = await Utils.extractJwt(req.headers['X-User']);
     const parentId = userData?._id;
 
-    let nBooks;
+    let nBooks = 0;
     try {
-      nBooks = await mongoDbClient.countDoc(parentId, 'book');
+      /**
+       * Obtains all bookshelfs, owned by current user and obtain each
+       * category, owned by each bookshelf
+       */
+      const allBookshelfsForUser = await Utils.bookshelfsByUserId(parentId);
+      if (allBookshelfsForUser.length > 0) {
+        for (const bookshelf of allBookshelfsForUser) {
+          const nDoc = await mongoDbClient.countDoc(bookshelf._id, 'book');
+          nBooks += nDoc;
+        }
+      }
     } catch (error) {
-      nBooks = 0;
+      return nBooks;
     }
 
-    let nCategories;
+    let nCategories = 0;
     try {
-      nCategories = await mongoDbClient.countDoc(parentId, 'category');
+      /**
+       * Obtains all bookshelfs, owned by current user and obtain each
+       * category, owned by each bookshelf
+       */
+      const allBookshelfsForUser = await Utils.bookshelfsByUserId(parentId);
+      if (allBookshelfsForUser.length > 0) {
+        for (const bookshelf of allBookshelfsForUser) {
+          const nDoc = await mongoDbClient.countDoc(bookshelf._id, 'category');
+          nCategories += nDoc;
+        }
+      }
     } catch (error) {
       nCategories = 0;
     }
@@ -198,7 +289,7 @@ class UserController{
       registrationDate: userData.dateCreated,
       numOfBooks: nBooks,
       numOfBookCategories: nCategories,
-      numOfShelves: nShelves,
+      numOfBookshelfs: nShelves,
     });
   }
 }

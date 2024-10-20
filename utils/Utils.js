@@ -6,13 +6,31 @@ const jwt = require('jsonwebtoken');
 const mongoDbClient = require('./mongo');
 const redisClient = require('./redis');
 
+/**
+ * Utils class is used to perform several operation on behalf of the several
+ * modules that consume it. It can be said to house helper functions that are
+ * used in several places through the system
+ */
 class Utils {
+  /**
+   * Validates a given email
+   * 
+   * @param {string} email - email to be validated
+   * @returns true if it is valid, else false
+   */
   static validateEmail(email) {
     // const emailPattern = process.env.EMAIL_PATTERN;
     const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     return emailPattern.test(email);
   }
 
+  /**
+   * Validates a given password by checking if it contains aplhanumeric with 
+   *  minimum length of 8 characters
+   * 
+   * @param {string} password - password to be validated
+   * @returns true if it passes, otherwise false
+   */
   static validatePassword(password) {
     if (password.length < 8) return false;
     // const passwordPattern = process.env.PAS_PATTERN;
@@ -20,12 +38,26 @@ class Utils {
     return passwordPattern.test(password);
   }
 
+  /**
+   * Hashes a given plain password
+   * 
+   * @param {string} password - password to be hashed
+   * @returns the hashed version of a given plain password
+   */
   static async hashPassword(password) {
     const salt = await bcrypt.genSalt(10);
     const hashedPwd = await bcrypt.hash(password, salt);
     return hashedPwd;
   }
 
+  /**
+   * Inserts a given object into a given collection
+   * 
+   * @param {string} docType - the collection's name
+   * @param {string} docObject - the object to be inserted
+   * @returns an object that contains id and an
+   * acknowldged values of the new or inserted document 
+   */
   static async storeDoc(docType, docObject) {
     let docCollection;
     if (docType === 'user') {
@@ -52,6 +84,12 @@ class Utils {
     }
   }
 
+  /**
+   * Finds a user based on their email address
+   * 
+   * @param {string} email - email's value of a user to lookup
+   * @returns null if no user matches, else the user object
+   */
   static async findUserByEmail(email) {
     try{
       const userCollection = await mongoDbClient.userCollection();
@@ -65,6 +103,13 @@ class Utils {
     }
   }
 
+  /**
+   * Authenticates a user by authenticating their submitted password
+   * 
+   * @param {string} plainPassword - a submitted password
+   * @param {string} hashPassword - the hashed value of the same password
+   * @returns true if passwords match, else false
+   */
   static async authenticatesPassword(plainPassword, hashPassword) {
     try {
       await bcrypt.compare(plainPassword, hashPassword, (err, result) => {
@@ -76,6 +121,12 @@ class Utils {
     }
   }
 
+  /**
+   * Generates a JWT token for a given user's data
+   * 
+   * @param {string} userDoc - the data to be tokenized
+   * @returns the generated token is returned if no error, else null
+   */
   static async generateToken(userDoc) {
     try {
       const token = jwt.sign(userDoc, process.env.JWT_SECRET);
@@ -86,6 +137,13 @@ class Utils {
     }
   }
 
+  /**
+   * Fetches the authorization header's value
+   * 
+   * @param {string} req - a URL's request object from which authorization's
+   * value is obtained
+   * @returns the fetched value if presents, otherwise null
+   */
   static fetchToken(req) {
     let token;
     try {
@@ -96,6 +154,12 @@ class Utils {
     return token;
   }
 
+  /**
+   * Extracts data, stored inside a JWT's token
+   * 
+   * @param {string} token - the token whose stored data is to be extracted
+   * @returns the extracted value if no error, otherwise null
+   */
   static async extractJwt(token) {
     try {
       const decoded = jwt.verify(token, process.env.JWT_SECRET);
@@ -105,6 +169,13 @@ class Utils {
     }
   }
 
+  /**
+   * Removes a given key and its associated value from the cache. The key is
+   * obtained from a request auhorization header
+   * 
+   * @param {string} req - a request that contains the authorization header
+   * @returns 'delete' if operation is successful
+   */
   static async delSessionToken(req) {
     let token;
     let getJwt;
@@ -129,6 +200,15 @@ class Utils {
     return 'deleted';
   }
 
+  /**
+   * Authenticates a given request for every protected route
+   * 
+   * @param {string} req - URL's request header
+   * @param {string} res - URL's respond header
+   * @param {string} next - callback function that passes request to the
+   * next request handler after this function has performed authentication
+   * checks on the request
+   */
   static async authentication(req, res, next) {
     try {
       const token = this.fetchToken(req);
@@ -148,6 +228,16 @@ class Utils {
     }
   }
 
+  /**
+   * Checks if a given document (i.e. book category, bookshelf) does not
+   * contain any other document.
+   * 
+   * @param {string} docId - document to check if it does not contain any
+   * other document
+   * @param {string} docType - a type of document (i.e. category, bookshelf)
+   * to be checked
+   * @returns true if it is empty, else false
+   */
   static async isEmpty(docId, docType) {
     const bookCol = await mongoDbClient.bookCollection();
     const categoryCol = await mongoDbClient.categoryCollection();
@@ -173,6 +263,13 @@ class Utils {
     return true;
   }
 
+  /**
+   * Checks if a user owns a bookshelf
+   * 
+   * @param {string} userId - the ID of the user whose access is checked
+   * @param {string} bookshelfId - the bookshelf to be checked against
+   * @returns true if user owns a bookshelf, else false
+   */
   static async ownsBookshelf(userId, bookshelfId) {
     try {
       const userExist = await mongoDbClient
@@ -197,6 +294,13 @@ class Utils {
     }
   }
 
+  /**
+   * Checks if a user owns a book category
+   * 
+   * @param {string} userId - the ID of the user whose access is checked
+   * @param {string} categoryId - the book category to be checked against
+   * @returns true if user owns a book category, else false
+   */
   static async ownsCategory(userId, categoryId) {
     try {
       const userExist = await mongoDbClient
@@ -221,6 +325,13 @@ class Utils {
     }
   }
 
+  /**
+   * Checks if a given bookshelf contains a given book category
+   * 
+   * @param {string} bookshelfId - the bookshelf where to check
+   * @param {string} categoryId - the book category to look for
+   * @returns true if it is contained in the given bookshelf, else false
+   */
   static async bookshelfOwnsCategory(bookshelfId, categoryId) {
     try {
       const categoryCol = await mongoDbClient.categoryCollection();
@@ -233,6 +344,16 @@ class Utils {
     }
   }
 
+  /**
+   * Updates the value of number of book in a given category
+   * 
+   * @param {string} oldCategoryId - the existing book category
+   * @param {string} newCategoryId - the new category that replaces
+   * the exisitng one
+   * @param {string} operator - an indicator to specify where to add
+   * to or remove from the value of a given exisitng book category
+   * @returns true if the operation is successful, else false
+   */
   static async updateCategoryBookCount(
     oldCategoryId,
     newCategoryId,
@@ -309,6 +430,12 @@ class Utils {
       return false;
   }
 
+  /**
+   * Uploads a file, found at a given path
+   * 
+   * @param {string} pathToFile - path to the file to be uploaded
+   * @returns the path to the location to where file is uploaded
+   */
   static async uploadBook(pathToFile) {
     try {
       const fileStoragepath = './bookshelf_folder/books';
@@ -324,6 +451,49 @@ class Utils {
       throw error;
     }
   } 
+
+  /**
+   * Checks if the database and the cache are ready to start taking queries
+   * 
+   * @param {string} res - HTTP response object
+   * @returns nothing if no error, else response object with error message
+   */
+  static async checkConnection(res) {
+    const isAvailableMongo = await mongoDbClient.isAvailable();
+    const isAvailableRedis = await redisClient.isAvailable();
+     /**
+     * Reports an error if the database or cache connection fails
+     */
+     if (!isAvailableMongo) {
+      return res.status(500).json({
+        status: 'Server not available',
+        detail: 'Mongo DB is not connected',
+      });
+    }
+    if (!isAvailableRedis) {
+      return res.status(500).json({
+        status: 'Server not available',
+        detail: 'Redis is not connected',
+      });
+    }
+  }
+
+  /**
+   * Retrieves all bookshelves owned by a user
+   * 
+   * @param {string} userId - an ID of the user
+   * @returns all the matched bookshelve objects
+   */
+  static async bookshelfsByUserId(userId) {
+    try {
+      const bookshelfCol = await mongoDbClient.bookshelfCollection();
+      const bookshelfs = await bookshelfCol
+        .find({ parentId: userId }).toArray();
+      return bookshelfs;
+    } catch (error) {
+      return [];
+    }
+  }
 }
 
 module.exports = Utils;

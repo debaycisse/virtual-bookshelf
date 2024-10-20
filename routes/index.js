@@ -6,10 +6,16 @@ const BookController = require('../controllers/BookController');
 
 const protectedRoutes = Router();
 BookshelfController;
+/**
+ * User route
+ */
 protectedRoutes.get('/user/me', async (req, res) => {
   await UserController.profile(req, res);
 });
 
+/**
+ * Bookshelfs routes
+ */
 protectedRoutes.post('/bookshelf', async (req, res) => {
   await BookshelfController.createBookshelf(req, res);
 });
@@ -30,6 +36,9 @@ protectedRoutes.delete('/bookshelf/:id', async (req, res) => {
   await BookshelfController.deleteBookshelf(req, res);
 });
 
+/**
+ * Book cateogry routes
+ */
 protectedRoutes.post('/category', async (req, res) => {
   await CategoryController.createCategory(req, res);
 });
@@ -50,6 +59,9 @@ protectedRoutes.delete('/category/:id', async (req, res) => {
   await CategoryController.deleteCategory(req, res);
 });
 
+/**
+ * Book routes
+ */
 protectedRoutes.post('/book', async (req, res) => {
   await BookController.createBook(req, res);
 });
