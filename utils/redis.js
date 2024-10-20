@@ -17,7 +17,6 @@ class RedisClient {
     this.redisClient.connect()
       .then(() => {
         this.isAlive = true;
-        console.log(`Redis is connected`);
       })
       .catch((err) => {
         this.isAlive = false;

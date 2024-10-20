@@ -10,7 +10,6 @@ class MongoDBClient {
       .then(() => {
         this.isConnected = true;
         this.db = this.mongoClient.db('bookShelves');
-        console.log(`MongoDB is connected`);
       })
       .catch((err) => {
         this.isConnected = false;

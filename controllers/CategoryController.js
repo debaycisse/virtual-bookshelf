@@ -170,11 +170,14 @@ class CategoryController {
           },
         },
         {
-          $limit: maxItems,
+          $sort: { dateCreated: -1 },
         },
         {
           $skip: page * maxItems,
-        }
+        },
+        {
+          $limit: maxItems,
+        },
       ]
       const categories = await categoryCol
         .aggregate(pipline).toArray();

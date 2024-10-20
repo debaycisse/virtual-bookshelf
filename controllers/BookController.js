@@ -6,11 +6,25 @@ const { ObjectId } = require('mongodb');
 const baseUrl = 'http://127.0.0.1:5000/api/v1';
 
 class BookController {
+  /**
+   * Takes required data to create a new book.
+   * Creates a new book instance and stores the same into the database.
+   * 
+   * @param {*} req - URL's request object
+   * @param {*} res - URL's response object
+   * @returns a newly created book's object
+   */
   static async createBook(req, res) {
     res.setHeader('Content-Type', mime.contentType('json'));
     try {
+      /**
+       * Obtains the data of a user who makes the reques
+       */
       const userData = await Utils.extractJwt(req.headers['X-User']);
       
+      /**
+       * Retrieves, validates, and authenticates a given bookshelf
+       */
       const bookshelfId = req.body.bookshelfId;
       if (!bookshelfId) {
         return res.status(400).json({
@@ -25,6 +39,7 @@ class BookController {
           error: 'Bookshelf does not exist',
         });
       }
+
       const userOwnsBookshelf = await Utils
       .ownsBookshelf(userData._id, bookshelfId);
       if (!userOwnsBookshelf) {
@@ -32,7 +47,10 @@ class BookController {
           error: 'Unauthorized bookshelf access'
         });
       }
-      
+
+      /**
+       * Retrieves, validates, and authenticates a given book's category
+       */
       const categoryId = req.body.categoryId;
       if (categoryId) {
         const isCategory = await mongoDbClient
@@ -51,7 +69,10 @@ class BookController {
           });
         }
       }
-  
+
+      /**
+       * Does a given category exist in a given bookshelf
+       */
       if (!await Utils.bookshelfOwnsCategory(bookshelfId, categoryId)) {
         return res.status(404).json({
           error: 'Category does not exist in a given bookshelf',
@@ -59,7 +80,9 @@ class BookController {
       }
   
       /**
-       * Creates the actual book (e-book)
+       * Uploads and creates the actual book (e-book).
+       * This is stored inside the root of the project.
+       * The path to the created book is returned.
        */
       const filePath = req.body.upload;
       if (!filePath) {
@@ -83,11 +106,13 @@ class BookController {
         publishedInYear,
         numberOfPages
       } = req.body;
+
       if (!name) {
         return res.status(400).json({
           error: 'Book\'s name must not be missing'
         });
       }
+
       const date = new Date();
       const bookCol = await mongoDbClient.bookCollection();
       const insertedBook = await bookCol.insertOne({
@@ -96,16 +121,16 @@ class BookController {
         categoryId: categoryId? categoryId : null,
         bookPath: fileFullePath, dateCreated: date.toLocaleString(),
         dateModified: date.toLocaleString(),
-      })
-      // Then update the affected category's nBooks' value -> Utils.updateCategoryBookCount
+      });
+
       /**
-       * Updates the book category
+       * Updates the book category to track a number of books, stored in it
        */
       if (categoryId) {
         await Utils
           .updateCategoryBookCount(categoryId, categoryId, '+');
       }
-      // Then return data
+
       return res.status(201).json({
         id: insertedBook.insertedId,
         name,
@@ -128,6 +153,15 @@ class BookController {
     }
   }
 
+  /**
+   * Retrieves a book's data and returns it.
+   * Takes an id of the book, the bookshelf where it resides, and
+   * optionally the category if it uses one
+   * 
+   * @param {*} req - URL's request object
+   * @param {*} res - URL's response object
+   * @returns  a set of data of the requsted book
+   */
   static async getBook(req, res) {
     res.setHeader('Content-Type', mime.contentType('json'));
     try {
@@ -136,7 +170,7 @@ class BookController {
       let bookDoc;
 
       /**
-       * Is book's ID provided
+       * Validates a given book's id
        */
       const bookId = req.params.id;
       if (!bookId) {
@@ -276,7 +310,8 @@ class BookController {
       }
 
       /**
-       * Return the book's data
+       * Returns a set of data of the requested book, which is obtained
+       * from the database where the book is stored
        */
       return res.status(200).json({
         id: bookDoc._id,
@@ -300,6 +335,16 @@ class BookController {
     }
   }
 
+  /**
+   * Retrieves multiple books' data and returns them. A maximum of 10 items
+   * per request.
+   * It uses URL query, named page to scrol throuhg multiple pages.
+   * 
+   * @param {*} req - URL's request object 
+   * @param {*} res - URL's response object
+   * @returns a list, which contains multiple sets of 
+   * different books, stored into the database
+   */
   static async getBooks(req, res) {
     res.setHeader('Content-Type', mime.contentType('json'));
     try {
@@ -333,10 +378,10 @@ class BookController {
       }
 
       /**
-       * Does the current user owns the Bookshelf
+       * Does the current user have access to the Bookshelf
        */
       const userOwnsBookshelf = await Utils
-      .ownsBookshelf(userData._id, bookshelfId);
+        .ownsBookshelf(userData._id, bookshelfId);
       if (!userOwnsBookshelf) {
         return res.status(401).json({
           error: 'Unauthorized bookshelf access'
@@ -344,7 +389,7 @@ class BookController {
       }
 
       /**
-       * If category's ID is given, does the current user possess the category
+       * If category's ID is given, does the current user have access to it
        */
       const categoryId = req.body.categoryId;
       if (categoryId) {
@@ -374,6 +419,10 @@ class BookController {
         }
       }
 
+      /**
+       * Creates pipeline, which is used in the aggregate function of the
+       * database to create a pagination
+       */
       const pipeline = [
         {
           $match: filters
@@ -386,18 +435,27 @@ class BookController {
           },
         },
         {
-          $limit: maxItems,
+          $sort: { dateCreated: -1 },
         },
         {
           $skip: page * maxItems,
-        }
+        },
+        {
+          $limit: maxItems,
+        },
       ];
 
+      /**
+       * Aggregates multiple books and converts them to an array
+       */
       let bookList;
       const bookCol = await mongoDbClient.bookCollection();
       const books = await bookCol
         .aggregate(pipeline).toArray();
 
+      /**
+       * Rearranges the elements for each of the aggregated data
+       */
       if (books.length > 0) {
         bookList = books.map(doc => {
           return {
@@ -415,10 +473,13 @@ class BookController {
         });
       }
 
+      /**
+       * Computes next and previous page's URL.
+       * Returns the parsed aggregated data
+       */
       let nextPage = null;
-      const processedDocCount = page * maxItems + books.length;
-      const totalDocCount = await bookCol
-        .countDocuments({ filters });
+      const processedDocCount = (page * maxItems) + books.length;
+      const totalDocCount = await bookCol.countDocuments(filters);
 
       if (totalDocCount > processedDocCount) {
         nextPage = page + 1;
@@ -426,7 +487,7 @@ class BookController {
 
       let prevPage = 0;
       const isSkipped = (page * maxItems) > 0;
-      if (isSkipped) prevPage = page + 1;
+      if (isSkipped) prevPage = page - 1;
 
       const currentPage = page + 1;
 
@@ -452,6 +513,13 @@ class BookController {
     }
   }
 
+  /**
+   * Modifies a book whose ID is given and returns the updated data.
+   * 
+   * @param {*} req - URL's request object
+   * @param {*} res - URL's response object
+   * @returns the updated version of a just altered book
+   */
   static async modifyBook(req, res) {
     res.setHeader('Content-Type', mime.contentType('json'));
     try {
@@ -463,7 +531,7 @@ class BookController {
       const bookId = req.params.id;
 
       /**
-       * Is the book's ID valid
+       * Validates and authenticates a retrieved book's ID
        */
       if (!bookId) {
         return res.status(400).json({
@@ -478,6 +546,10 @@ class BookController {
           error: 'Book does not exist',
         });
       }
+
+      /**
+       * Retrieves and validates a provided bookshelf
+       */
       const bookshelfId = req.body.bookshelfId;
 
       if (!bookshelfId) {
@@ -493,6 +565,10 @@ class BookController {
           error: 'Bookshelf does not exist',
         });
       }
+
+      /**
+       * Does the current user have permission over the bookshelf
+       */
       const userOwnsBookshelf = await Utils
       .ownsBookshelf(userData._id, bookshelfId);
       if (!userOwnsBookshelf) {
@@ -500,7 +576,10 @@ class BookController {
           error: 'Unauthorized bookshelf access'
         });
       }
-      
+
+      /**
+       * Retrieves and parses the category's ID, if one is provided
+       */
       const categoryId = req.body.categoryId;
       if (categoryId) {
         const isCategory = await mongoDbClient
@@ -562,7 +641,8 @@ class BookController {
       };
 
       /**
-       * Validate the correctness of both publishedInYear and numberOfPages
+       * Validate the correctness of both publishedInYear and
+       * numberOfPages objects' keys
        */
       const publishedInYearVal = Number(publishedInYear);
       const numberOfPagesVal = Number(numberOfPages);
@@ -573,6 +653,10 @@ class BookController {
         update.$set['numberOfPages'] = numberOfPagesVal;
       }
 
+      /**
+       * Updates the book's record in the database and the book's category,
+       * especially if the book is placed in a new category
+       */
       const isUpdated = await bookCol.updateOne(filter, update);
       if (isUpdated.modifiedCount > 0) {
         if (categoryId !== undefined) {
@@ -615,8 +699,139 @@ class BookController {
     }
   }
 
+  /**
+   * Removes a book from the database
+   * 
+   * @param {*} req - - URL's request object
+   * @param {*} res - URL's response object
+   * @returns no content with status code 204
+   */
   static async deleteBook(req, res) {
-    // TODO: Implementation
+    res.setHeader('Content-Type', mime.contentType('json'));
+    try {
+      const userData = await Utils.extractJwt(req.headers['X-User']);
+      const bookCol = await mongoDbClient.bookCollection();
+      const bookId = req?.params?.id;
+      let filter;
+      let categoryUsedInBook;
+
+      /**
+       * Is the given book valid
+       */
+      if (!bookId) {
+        return res.status(400).json({
+          error: `Book's ID can not be missing`,
+        });
+      }
+
+      const isBook = await mongoDbClient
+      .verifyDocType(bookId, 'book');
+      
+      if (!isBook) {
+        return res.status(404).json({
+          error: 'Book does not exist',
+        });
+      }
+
+      /**
+       * Validate the given bookshelf
+       */
+      const bookshelfId = req.body.bookshelfId;
+
+      if (!bookshelfId) {
+        return res.status(400).json({
+          error: 'Bookshelf can not be missing',
+        });
+      }
+      
+      const isBookshelf = await mongoDbClient
+        .verifyDocType(bookshelfId, 'bookshelf');
+      if (!isBookshelf) {
+        return res.status(404).json({
+          error: 'Bookshelf does not exist',
+        });
+      }
+
+      /**
+       * Does the given user have access to the bookshelf
+       */
+      const userOwnsBookshelf = await Utils
+      .ownsBookshelf(userData._id, bookshelfId);
+
+      if (!userOwnsBookshelf) {
+        return res.status(401).json({
+          error: 'Unauthorized bookshelf access'
+        });
+      }
+
+      /**
+       * Checks if category is given and validates it
+       */
+      const categoryId = req.body.categoryId;
+      if (categoryId) {
+        const isCategory = await mongoDbClient
+          .verifyDocType(categoryId, 'category');
+
+        if (!isCategory) {
+          return res.status(400).json({
+            error: 'Invalid category id',
+          });
+        }
+
+        filter = {
+          _id: new ObjectId(bookId),
+          bookshelfId,
+          categoryId
+        };
+
+        const bookDoc = await bookCol.findOne(filter);
+        console.log(`bookDoc >> ${JSON.stringify(bookDoc)}`)
+
+        if (!bookDoc) {
+          return res.status(404).json({
+            error: 'Book not found',
+          });
+        }
+
+        categoryUsedInBook = categoryId;
+      } else {
+        const bookDoc = await bookCol
+          .findOne({ _id: new ObjectId(bookId),
+            bookshelfId
+           });
+
+        if (!bookDoc) {
+          return res.status(404).json({
+            error: 'Book not found',
+          });
+        }
+
+        filter = {
+          _id: new ObjectId(bookId),
+          bookshelfId,
+        };
+
+        categoryUsedInBook = bookDoc.categoryId;
+      }
+
+      const isDeleted = await bookCol.deleteOne(filter);
+      if (isDeleted.deletedCount < 1) {
+        return res.status(500).json({
+          error: 'Failed to delete',
+        });
+      }
+      if (isDeleted.deletedCount > 0) {
+        await Utils.updateCategoryBookCount(
+          categoryUsedInBook, categoryUsedInBook, null
+        );
+      }
+      return res.status(204).json({});
+    } catch (error) {
+      return res.status(500).json({
+        error: 'Internal server error',
+        detail: error.message,
+      });
+    }
   }
   
 }

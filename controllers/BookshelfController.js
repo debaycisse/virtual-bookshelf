@@ -91,11 +91,14 @@ class BookshelfController {
           }
         },
         {
-          $limit: maxItems,
+          $sort: { dateCreated: -1 },
         },
         {
           $skip: page * maxItems,
-        }
+        },
+        {
+          $limit: maxItems,
+        },
       ]
       const bookshelfs = await bookshelfCol
         .aggregate(pipline).toArray();
