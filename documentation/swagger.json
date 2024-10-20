@@ -1,0 +1,2374 @@
+{
+  "openapi": "3.0.0",
+  "info": {
+    "title": "Virtual Bookshelf API",
+    "description": "A virtual bookshelf management API",
+    "version": "1.0.0"
+  },
+  "servers": [
+    {
+      "url": "http://127.0.0.1:5000",
+      "description": "Local development server"
+    }
+  ],
+  "components": {
+    "securitySchemes": {
+      "bearerAuth": {
+        "type": "http",
+        "scheme": "bearer",
+        "bearerFormat": "UUID"
+      }
+    }
+  },
+  "paths": {
+    "/api/v1/status": {
+      "get": {
+        "summary": "Check server status",
+        "responses": {
+          "200": {
+            "description": "Server is available",
+            "content": {
+              "application/json": {
+                "example": {
+                  "status": "server is available"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Server not available",
+            "content": {
+              "application/json": {
+                "examples": {
+                  "mongoDbError": {
+                    "summary": "MongoDB is not connected",
+                    "value": {
+                      "status": "Server not available",
+                      "detail": "Mongo DB is not connected"
+                    }
+                  },
+                  "redisError": {
+                    "summary": "Redis is not connected",
+                    "value": {
+                      "status": "Server not available",
+                      "detail": "Redis server is not connected"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/user/register": {
+      "post": {
+        "summary": "Register a new user",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "name": {
+                    "type": "string",
+                    "example": "John Doe"
+                  },
+                  "email": {
+                    "type": "string",
+                    "example": "johndoe@example.com"
+                  },
+                  "password": {
+                    "type": "string",
+                    "example": "strongPassword123#$#$"
+                  }
+                },
+                "required": ["name", "email", "password"]
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "User created successfully",
+            "content": {
+              "application/json": {
+                "example": {
+                  "message": "user created successfully",
+                  "loginEndpoint": "http://127.0.0.1:5000/api/v1/user/login"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad request",
+            "content": {
+              "application/json": {
+                "examples": {
+                  "missingFields": {
+                    "summary": "Missing required fields",
+                    "value": {
+                      "error": "Bad request",
+                      "detail": "email, password, and name must be provided"
+                    }
+                  },
+                  "invalidEmail": {
+                    "summary": "Invalid email",
+                    "value": {
+                      "error": "Bad request",
+                      "detail": "provided email is not valid"
+                    }
+                  },
+                  "invalidPassword": {
+                    "summary": "Invalid password",
+                    "value": {
+                      "error": "Bad request",
+                      "detail": "password must be a minimum of 8 characters and alphanumeric"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal server error",
+            "content": {
+              "application/json": {
+                "example": {
+                  "error": "Internal server error",
+                  "detail": "New user could not be created"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/user/login": {
+      "post": {
+        "summary": "Login a user",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "email": {
+                    "type": "string",
+                    "example": "johndoe@example.com"
+                  },
+                  "password": {
+                    "type": "string",
+                    "example": "strongPassword123#$"
+                  }
+                },
+                "required": ["email", "password"]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Login successful",
+            "headers": {
+              "X-Token": {
+                "description": "User's token",
+                "schema": {
+                  "type": "string",
+                  "example": "someToken12345"
+                }
+              }
+            },
+            "content": {
+              "application/json": {
+                "example": {
+                  "message": "login was successful",
+                  "token": "someToken12345",
+                  "logoutEndpoint": "http://127.0.0.1:5000/api/v1/user/logout"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad request",
+            "content": {
+              "application/json": {
+                "examples": {
+                  "missingFields": {
+                    "summary": "Missing required fields",
+                    "value": {
+                      "error": "Bad request",
+                      "detail": "email and password must be provided"
+                    }
+                  },
+                  "invalidEmail": {
+                    "summary": "Invalid email or password",
+                    "value": {
+                      "error": "Bad request",
+                      "detail": "invalid email or password"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal server error",
+            "content": {
+              "application/json": {
+                "example": {
+                  "error": "Internal server error",
+                  "detail": "failed to generate token"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/user/logout": {
+      "post": {
+        "summary": "Logout a user",
+        "security": [{ "bearerAuth": [] }],
+        "responses": {
+          "200": {
+            "description": "Logged out successfully",
+            "content": {
+              "application/json": {
+                "example": {
+                  "message": "logged out successfully"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Logout failure",
+            "content": {
+              "application/json": {
+                "examples": {
+                  "invalidToken": {
+                    "summary": "Invalid login token",
+                    "value": {
+                      "error": "logout failure",
+                      "detail": "Invalid login token"
+                    }
+                  },
+                  "missingHeader": {
+                    "summary": "Missing authorization header",
+                    "value": {
+                      "error": "logout failure",
+                      "detail": "Authorization header is missing"
+                    }
+                  },
+                  "expiredToken": {
+                    "summary": "Expired or invalid token",
+                    "value": {
+                      "error": "logout failure",
+                      "detail": "Invalid or expired token"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Server logout failure",
+            "content": {
+              "application/json": {
+                "example": {
+                  "error": "server log out failure",
+                  "detail": "Could not logout"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/user/me": {
+      "get": {
+        "summary": "Get user profile information",
+        "description": "Retrieves a user's profile details including name, registration date, number of books, book categories, and bookshelves (requires authentication)",
+        "security": [{ "bearerAuth": [] }],
+        "responses": {
+          "200": {
+            "description": "User profile information retrieved successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "name": {
+                      "type": "string",
+                      "description": "User's name"
+                    },
+                    "registrationDate": {
+                      "type": "string",
+                      "description": "User's registration date"
+                    },
+                    "numOfBooks": {
+                      "type": "integer",
+                      "description": "Number of books owned by the user"
+                    },
+                    "numOfBookCategories": {
+                      "type": "integer",
+                      "description": "Number of book categories created by the user"
+                    },
+                    "numOfBookshelfs": {
+                      "type": "integer",
+                      "description": "Number of bookshelves created by the user"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad request (e.g., missing user data in header)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "string",
+                      "description": "Error message"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/bookshelf": {
+      "post": {
+        "summary": "Create a new bookshelf",
+        "description": "Creates a new bookshelf for the authenticated user",
+        "security": [{ "bearerAuth": [] }],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "name": {
+                    "type": "string",
+                    "description": "Name of the bookshelf"
+                  }
+                },
+                "required": ["name"]
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Bookshelf created successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "id": {
+                      "type": "string",
+                      "description": "ID of the created bookshelf"
+                    },
+                    "name": {
+                      "type": "string",
+                      "description": "Name of the bookshelf"
+                    },
+                    "parentId": {
+                      "type": "string",
+                      "description": "ID of the user who created the bookshelf"
+                    },
+                    "message": {
+                      "type": "string",
+                      "description": "Success message"
+                    },
+                    "dateCreated": {
+                      "type": "string",
+                      "description": "Date and time the bookshelf was created"
+                    },
+                    "retrieveBookshelfs": {
+                      "type": "string",
+                      "description": "URL endpoint to retrieve all bookshelves"
+                    },
+                    "retrieveBookshelf": {
+                      "type": "string",
+                      "description": "URL endpoint pattern to retrieve a specific bookshelf (replace `<id>` with the bookshelf ID)"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad request (e.g., missing data, existing bookshelf name)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "string",
+                      "description": "Error message"
+                    },
+                    "detail": {
+                      "type": "string",
+                      "description": "Error details"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal server error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "string",
+                      "description": "Error message"
+                    },
+                    "detail": {
+                      "type": "string",
+                      "description": "Error details"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/bookshelf/{id}": {
+      "get": {
+        "summary": "Get a specific bookshelf",
+        "description": "Retrieves details of a bookshelf for the authenticated user",
+        "security": [{ "bearerAuth": [] }],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "description": "ID of the bookshelf"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Bookshelf details retrieved successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "id": {
+                      "type": "string",
+                      "description": "ID of the bookshelf"
+                    },
+                    "name": {
+                      "type": "string",
+                      "description": "Name of the bookshelf"
+                    },
+                    "parentId": {
+                      "type": "string",
+                      "description": "ID of the user who created the bookshelf"
+                    },
+                    "dateCreated": {
+                      "type": "string",
+                      "description": "Date and time the bookshelf was created"
+                    },
+                    "retrieveAllBookshelfs": {
+                      "type": "string",
+                      "description": "URL endpoint to retrieve all bookshelves"
+                    },
+                    "removeBookshelf": {
+                      "type": "string",
+                      "description": "URL endpoint pattern to remove a specific bookshelf (replace `<id>` with the bookshelf ID)"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad request (e.g., missing data, invalid bookshelf ID)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "string",
+                      "description": "Error message"
+                    },
+                    "detail": {
+                      "type": "string",
+                      "description": "Error details"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Bookshelf not found (unauthorized access or non-existent shelf)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "string",
+                      "description": "Error message"
+                    },
+                    "detail": {
+                      "type": "string",
+                      "description": "Error details"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal server error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "string",
+                      "description": "Error message"
+                    },
+                    "detail": {
+                      "type": "string",
+                      "description": "Error details"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "put": {
+        "summary": "Modify a bookshelf",
+        "description": "Updates the name of a bookshelf for the authenticated user",
+        "security": [{ "bearerAuth": [] }],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "description": "ID of the bookshelf"
+            }
+          },
+          {
+            "name": "name",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "description": "New name of the bookshelf"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Bookshelf updated successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "id": {
+                      "type": "string",
+                      "description": "ID of the bookshelf"
+                    },
+                    "name": {
+                      "type": "string",
+                      "description": "Updated name of the bookshelf"
+                    },
+                    "parentId": {
+                      "type": "string",
+                      "description": "ID of the user who created the bookshelf"
+                    },
+                    "dateCreated": {
+                      "type": "string",
+                      "description": "Date and time the bookshelf was created"
+                    },
+                    "dateModified": {
+                      "type": "string",
+                      "description": "Date and time the bookshelf was last modified"
+                    },
+                    "retrieveAllBookshelfs": {
+                      "type": "string",
+                      "description": "URL endpoint to retrieve all bookshelves"
+                    },
+                    "removeBookshelf": {
+                      "type": "string",
+                      "description": "URL endpoint pattern to remove a specific bookshelf (replace `<id>` with the bookshelf ID)"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad request (e.g., missing data, invalid bookshelf ID, invalid update data)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "string",
+                      "description": "Error message"
+                    },
+                    "detail": {
+                      "type": "string",
+                      "description": "Error details"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Bookshelf not found (unauthorized access or non-existent shelf)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "string",
+                      "description": "Error message"
+                    },
+                    "detail": {
+                      "type": "string",
+                      "description": "Error details"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal server error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "string",
+                      "description": "Error details"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "summary": "Delete a bookshelf",
+        "description": "Deletes a bookshelf for the authenticated user if it's empty",
+        "security": [{ "bearerAuth": [] }],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "description": "ID of the bookshelf"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Bookshelf deleted successfully"
+          },
+          "400": {
+            "description": "Bad request (e.g., missing data, invalid bookshelf ID, non-empty bookshelf)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "string",
+                      "description": "Error message"
+                    },
+                    "detail": {
+                      "type": "string",
+                      "description": "Error details"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal server error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "string",
+                      "description": "Error message"
+                    },
+                    "detail": {
+                      "type": "string",
+                      "description": "Error details"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/bookshelfs": {
+      "get": {
+        "summary": "Get all user's bookshelves (paginated)",
+        "description": "Retrieves a paginated list of bookshelves owned by the authenticated user",
+        "security": [{ "bearerAuth": [] }],
+        "parameters": [
+          {
+            "name": "page",
+            "in": "query",
+            "description": "Page number (defaults to 0)",
+            "schema": {
+              "type": "integer",
+              "minimum": 0
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Bookshelves retrieved successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "bookshelfs": {
+                      "type": "array",
+                      "description": "Array of bookshelf objects",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "id": {
+                            "type": "string",
+                            "description": "ID of the bookshelf"
+                          },
+                          "parentId": {
+                            "type": "string",
+                            "description": "ID of the user who created the bookshelf"
+                          },
+                          "name": {
+                            "type": "string",
+                            "description": "Name of the bookshelf"
+                          },
+                          "dateCreated": {
+                            "type": "string",
+                            "description": "Date and time the bookshelf was created"
+                          },
+                          "dateModified": {
+                            "type": "string",
+                            "description": "Date and time the bookshelf was last modified (optional)"
+                          }
+                        }
+                      }
+                    },
+                    "currentPage": {
+                      "type": "integer",
+                      "description": "Current page number"
+                    },
+                    "previousPage": {
+                      "type": "string",
+                      "description": "URL for the previous page (null if on the first page)"
+                    },
+                    "nextPage": {
+                      "type": "string",
+                      "description": "URL for the next page (null if on the last page)"
+                    },
+                    "retrieveBookshelf": {
+                      "type": "string",
+                      "description": "URL endpoint pattern to retrieve a specific bookshelf (replace `<id>` with the bookshelf ID)"
+                    },
+                    "removeBookshelf": {
+                      "type": "string",
+                      "description": "URL endpoint pattern to remove a specific bookshelf (replace `<id>` with the bookshelf ID)"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad request (e.g., missing data, invalid page number)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "string",
+                      "description": "Error message"
+                    },
+                    "detail": {
+                      "type": "string",
+                      "description": "Error details"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal server error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "string",
+                      "description": "Error message"
+                    },
+                    "detail": {
+                      "type": "string",
+                      "description": "Error details"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/category": {
+      "post": {
+        "summary": "Create a book category",
+        "description": "Creates a new category within a specific bookshelf for the authenticated user",
+        "security": [{ "bearerAuth": [] }],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "parentId": {
+                    "type": "string",
+                    "description": "ID of the bookshelf where the category will be stored"
+                  },
+                  "name": {
+                    "type": "string",
+                    "description": "Name of the book category"
+                  }
+                },
+                "required": ["parentId", "name"]
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Category created successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "id": {
+                      "type": "string",
+                      "description": "ID of the created category"
+                    },
+                    "name": {
+                      "type": "string",
+                      "description": "Name of the category"
+                    },
+                    "parentId": {
+                      "type": "string",
+                      "description": "ID of the bookshelf where the category is stored"
+                    },
+                    "nBooks": {
+                      "type": "integer",
+                      "description": "Number of books currently in the category (always 0 for new categories)"
+                    },
+                    "message": {
+                      "type": "string",
+                      "description": "Success message"
+                    },
+                    "dateCreated": {
+                      "type": "string",
+                      "description": "Date and time the category was created"
+                    },
+                    "dateModified": {
+                      "type": "string",
+                      "description": "Date and time the category was last modified"
+                    },
+                    "retrieveAllCategories": {
+                      "type": "string",
+                      "description": "URL endpoint to retrieve all categories"
+                    },
+                    "retrieveCategory": {
+                      "type": "string",
+                      "description": "URL endpoint pattern to retrieve a specific category (replace `<id>` with the category ID)"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad request (e.g., missing data, invalid bookshelf ID, unauthorized access)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "string",
+                      "description": "Error message"
+                    },
+                    "detail": {
+                      "type": "string",
+                      "description": "Error details"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal server error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "string",
+                      "description": "Error message"
+                    },
+                    "detail": {
+                      "type": "string",
+                      "description": "Error details"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/category/{id}": {
+      "get": {
+        "summary": "Get a book category",
+        "description": "Retrieves details of a specific book category within a bookshelf for the authenticated user",
+        "security": [{ "bearerAuth": [] }],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "description": "ID of the book category"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Book category retrieved successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "id": {
+                      "type": "string",
+                      "description": "ID of the book category"
+                    },
+                    "name": {
+                      "type": "string",
+                      "description": "Name of the book category"
+                    },
+                    "parentId": {
+                      "type": "string",
+                      "description": "ID of the bookshelf where the category is stored"
+                    },
+                    "nBooks": {
+                      "type": "integer",
+                      "description": "Number of books currently in the category"
+                    },
+                    "dateCreated": {
+                      "type": "string",
+                      "description": "Date and time the category was created"
+                    },
+                    "dateModified": {
+                      "type": "string",
+                      "description": "Date and time the category was last modified"
+                    },
+                    "retrieveAllCategories": {
+                      "type": "string",
+                      "description": "URL endpoint to retrieve all categories"
+                    },
+                    "retrieveCategory": {
+                      "type": "string",
+                      "description": "URL endpoint pattern to retrieve a specific category (replace `<id>` with the category ID)"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad request (e.g., missing data, invalid category ID, unauthorized access)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "string",
+                      "description": "Error message"
+                    },
+                    "detail": {
+                      "type": "string",
+                      "description": "Error details"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized access to the category"
+          },
+          "404": {
+            "description": "Book category not found"
+          },
+          "500": {
+            "description": "Internal server error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "string",
+                      "description": "Error message"
+                    },
+                    "detail": {
+                      "type": "string",
+                      "description": "Error details"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "put": {
+        "summary": "Update book category",
+        "description": "Updates details of a specific book category within a bookshelf for the authenticated user",
+        "security": [{ "bearerAuth": [] }],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "description": "ID of the book category to update"
+            }
+          },
+          {
+            "name": "parentId",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "description": "ID of the bookshelf containing the category"
+            }
+          },
+          {
+            "name": "name",
+            "in": "body",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "description": "New name for the book category"
+            }
+          },
+          {
+            "name": "nBooks",
+            "in": "body",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "description": "Updated number of books in the category"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Book category updated successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "id": {
+                      "type": "string",
+                      "description": "ID of the updated book category"
+                    },
+                    "name": {
+                      "type": "string",
+                      "description": "Name of the updated book category"
+                    },
+                    "parentId": {
+                      "type": "string",
+                      "description": "ID of the bookshelf containing the category"
+                    },
+                    "nBooks": {
+                      "type": "integer",
+                      "description": "Number of books currently in the category"
+                    },
+                    "dateCreated": {
+                      "type": "string",
+                      "description": "Date and time the category was created"
+                    },
+                    "dateModified": {
+                      "type": "string",
+                      "description": "Date and time the category was last modified"
+                    },
+                    "retrieveCategory": {
+                      "type": "string",
+                      "description": "URL endpoint pattern to retrieve a specific category (replace `<id>` with the category ID)"
+                    },
+                    "removeCategory": {
+                      "type": "string",
+                      "description": "URL endpoint pattern to remove a category (replace `<id>` with the category ID)"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad request (e.g., missing data, invalid category or bookshelf ID, unauthorized access)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "string",
+                      "description": "Error message"
+                    },
+                    "detail": {
+                      "type": "string",
+                      "description": "Error details"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized access to the bookshelf",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "string",
+                      "description": "Error message"
+                    },
+                    "detail": {
+                      "type": "string",
+                      "description": "Error details"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Category not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "string",
+                      "description": "Error message"
+                    },
+                    "detail": {
+                      "type": "string",
+                      "description": "Error details"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal server error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "string",
+                      "description": "Error message"
+                    },
+                    "detail": {
+                      "type": "string",
+                      "description": "Error details"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "summary": "Delete book category",
+        "description": "Deletes a book category within a bookshelf for the authenticated user",
+        "security": [{ "bearerAuth": [] }],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "description": "ID of the book category to delete"
+            }
+          },
+          {
+            "name": "parentId",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "description": "ID of the bookshelf containing the category"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Book category deleted successfully (no content returned)"
+          },
+          "400": {
+            "description": "Bad request (e.g., missing data, invalid category or bookshelf ID, non-empty category, unauthorized access)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "string",
+                      "description": "Error message"
+                    },
+                    "detail": {
+                      "type": "string",
+                      "description": "Error details"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized access to the bookshelf",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "string",
+                      "description": "Error message"
+                    },
+                    "detail": {
+                      "type": "string",
+                      "description": "Error details"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal server error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "string",
+                      "description": "Error message"
+                    },
+                    "detail": {
+                      "type": "string",
+                      "description": "Error details"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/categories": {
+      "get": {
+        "summary": "Get book categories (paginated)",
+        "description": "Retrieves a paginated list of book categories within a specific bookshelf for the authenticated user",
+        "security": [{ "bearerAuth": [] }],
+        "parameters": [
+          {
+            "name": "parentId",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "description": "ID of the bookshelf to retrieve categories from"
+            }
+          },
+          {
+            "name": "page",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "description": "Page number (defaults to 0)"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Book categories retrieved successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "categories": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "id": {
+                            "type": "string",
+                            "description": "ID of the book category"
+                          },
+                          "name": {
+                            "type": "string",
+                            "description": "Name of the book category"
+                          },
+                          "parentId": {
+                            "type": "string",
+                            "description": "ID of the bookshelf where the category is stored"
+                          },
+                          "nBooks": {
+                            "type": "integer",
+                            "description": "Number of books currently in the category"
+                          },
+                          "dateCreated": {
+                            "type": "string",
+                            "description": "Date and time the category was created"
+                          },
+                          "dateModified": {
+                            "type": "string",
+                            "description": "Date and time the category was last modified"
+                          }
+                        }
+                      }
+                    },
+                    "currentPage": {
+                      "type": "integer",
+                      "description": "Current page number (starts from 1)"
+                    },
+                    "previousPage": {
+                      "type": "string",
+                      "nullable": true,
+                      "description": "URL for the previous page (null if on the first page)"
+                    },
+                    "nextPage": {
+                      "type": "string",
+                      "nullable": true,
+                      "description": "URL for the next page (null if on the last page)"
+                    },
+                    "retrieveCategory": {
+                      "type": "string",
+                      "description": "URL endpoint pattern to retrieve a specific category (replace `<id>` with the category ID)"
+                    },
+                    "removeCategory": {
+                      "type": "string",
+                      "description": "URL endpoint pattern to remove a category (replace `<id>` with the category ID)"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad request (e.g., missing data, invalid bookshelf ID, unauthorized access)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "string",
+                      "description": "Error message"
+                    },
+                    "detail": {
+                      "type": "string",
+                      "description": "Error details"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized access to the bookshelf",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "string",
+                      "description": "Error message"
+                    },
+                    "detail": {
+                      "type": "string",
+                      "description": "Error details"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal server error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "string",
+                      "description": "Error message"
+                    },
+                    "detail": {
+                      "type": "string",
+                      "description": "Error details"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/book": {
+      "post": {
+        "summary": "Create book",
+        "description": "Creates a new book within a specific bookshelf for the authenticated user",
+        "security": [{ "bearerAuth": [] }],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "bookshelfId": {
+                    "type": "string",
+                    "description": "ID of the bookshelf to contain the book"
+                  },
+                  "categoryId": {
+                    "type": "string",
+                    "description": "ID of the category within the bookshelf (optional)"
+                  },
+                  "name": {
+                    "type": "string",
+                    "description": "Name of the book"
+                  },
+                  "author": {
+                    "type": "string",
+                    "description": "Author of the book"
+                  },
+                  "publishedInYear": {
+                    "type": "integer",
+                    "description": "Year the book was published"
+                  },
+                  "numberOfPages": {
+                    "type": "integer",
+                    "description": "Number of pages in the book"
+                  },
+                  "upload": {
+                    "type": "string",
+                    "description": "Path to the book file (implementation specific)"
+                  }
+                },
+                "required": ["bookshelfId", "name"]
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Book created successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "id": {
+                      "type": "string",
+                      "description": "ID of the created book"
+                    },
+                    "name": {
+                      "type": "string",
+                      "description": "Name of the book"
+                    },
+                    "author": {
+                      "type": "string",
+                      "description": "Author of the book"
+                    },
+                    "publishedInYear": {
+                      "type": "integer",
+                      "description": "Year the book was published"
+                    },
+                    "numberOfPages": {
+                      "type": "integer",
+                      "description": "Number of pages in the book"
+                    },
+                    "bookshelfId": {
+                      "type": "string",
+                      "description": "ID of the bookshelf containing the book"
+                    },
+                    "categoryId": {
+                      "type": "string",
+                      "description": "ID of the category within the bookshelf (optional)"
+                    },
+                    "bookPath": {
+                      "type": "string",
+                      "description": "Path to the stored book file (implementation specific)"
+                    },
+                    "dateCreated": {
+                      "type": "string",
+                      "description": "Date and time the book was created"
+                    },
+                    "dateModified": {
+                      "type": "string",
+                      "description": "Date and time the book was last modified"
+                    },
+                    "retrieveBook": {
+                      "type": "string",
+                      "description": "URL endpoint to retrieve a specific book"
+                    },
+                    "retrieveAllBooks": {
+                      "type": "string",
+                      "description": "URL endpoint to retrieve all books"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad request (e.g., missing data, invalid bookshelf or category ID, unauthorized access)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "string",
+                      "description": "Error message"
+                    },
+                    "detail": {
+                      "type": "string",
+                      "description": "Error details"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized access to the bookshelf or category",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "string",
+                      "description": "Error message"
+                    },
+                    "detail": {
+                      "type": "string",
+                      "description": "Error details"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal server error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "string",
+                      "description": "Error message"
+                    },
+                    "detail": {
+                      "type": "string",
+                      "description": "Error details"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/book/{id}": {
+      "get": {
+        "summary": "Retrieve a book",
+        "description": "Retrieves a specific book within a bookshelf for the authenticated user, based on the provided book ID and bookshelf ID",
+        "security": [{ "bearerAuth": [] }],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "description": "ID of the book to retrieve",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "bookshelfId": {
+                    "type": "string",
+                    "description": "ID of the bookshelf containing the book"
+                  },
+                  "categoryId": {
+                    "type": "string",
+                    "description": "ID of the category within the bookshelf (optional)"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Book retrieved successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "id": {
+                      "type": "string",
+                      "description": "ID of the retrieved book"
+                    },
+                    "name": {
+                      "type": "string",
+                      "description": "Name of the book"
+                    },
+                    "author": {
+                      "type": "string",
+                      "description": "Author of the book (optional)"
+                    },
+                    "publishedInYear": {
+                      "type": "integer",
+                      "description": "Year the book was published (optional)"
+                    },
+                    "numberOfPages": {
+                      "type": "integer",
+                      "description": "Number of pages in the book (optional)"
+                    },
+                    "bookshelfId": {
+                      "type": "string",
+                      "description": "ID of the bookshelf containing the book"
+                    },
+                    "categoryId": {
+                      "type": "string",
+                      "description": "ID of the category within the bookshelf (optional)"
+                    },
+                    "bookPath": {
+                      "type": "string",
+                      "description": "Path to the stored book file (implementation specific)"
+                    },
+                    "dateCreated": {
+                      "type": "string",
+                      "description": "Date and time the book was created"
+                    },
+                    "dateModified": {
+                      "type": "string",
+                      "description": "Date and time the book was last modified"
+                    },
+                    "retrieveAllBooks": {
+                      "type": "string",
+                      "description": "URL endpoint to retrieve all books"
+                    },
+                    "createBook": {
+                      "type": "string",
+                      "description": "URL endpoint to create a book"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad request (e.g., missing data, invalid book ID, unauthorized access)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "string",
+                      "description": "Error message"
+                    },
+                    "detail": {
+                      "type": "string",
+                      "description": "Error details"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized access to the bookshelf",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "string",
+                      "description": "Error message"
+                    },
+                    "detail": {
+                      "type": "string",
+                      "description": "Error details"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Book not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "string",
+                      "description": "Error message"
+                    },
+                    "detail": {
+                      "type": "string",
+                      "description": "Error details"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal server error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "string",
+                      "description": "Error message"
+                    },
+                    "detail": {
+                      "type": "string",
+                      "description": "Error details"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "put": {
+        "summary": "Modify a book",
+        "description": "Updates an existing book within a bookshelf for the authenticated user",
+        "security": [{ "bearerAuth": [] }],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "description": "ID of the book to modify"
+            }
+          },
+          {
+            "name": "bookshelfId",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "description": "ID of the bookshelf containing the book"
+            }
+          },
+          {
+            "name": "categoryId",
+            "in": "body",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "description": "ID of the category within the bookshelf (optional)"
+            }
+          },
+          {
+            "name": "name",
+            "in": "body",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "description": "New name for the book (optional)"
+            }
+          },
+          {
+            "name": "author",
+            "in": "body",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "description": "New author for the book (optional)"
+            }
+          },
+          {
+            "name": "publishedInYear",
+            "in": "body",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "description": "New year the book was published (optional)"
+            }
+          },
+          {
+            "name": "numberOfPages",
+            "in": "body",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "description": "New number of pages in the book (optional)"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Book updated successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "id": {
+                      "type": "string",
+                      "description": "ID of the updated book"
+                    },
+                    "name": {
+                      "type": "string",
+                      "description": "Updated name of the book"
+                    },
+                    "author": {
+                      "type": "string",
+                      "description": "Updated author of the book"
+                    },
+                    "publishedInYear": {
+                      "type": "integer",
+                      "description": "Updated year the book was published"
+                    },
+                    "numberOfPages": {
+                      "type": "integer",
+                      "description": "Updated number of pages in the book"
+                    },
+                    "bookshelfId": {
+                      "type": "string",
+                      "description": "ID of the bookshelf containing the updated book"
+                    },
+                    "categoryId": {
+                      "type": "string",
+                      "description": "ID of the category within the bookshelf (optional)"
+                    },
+                    "bookPath": {
+                      "type": "string",
+                      "description": "Path to the stored book file (implementation specific)"
+                    },
+                    "dateCreated": {
+                      "type": "string",
+                      "description": "Date and time the book was created"
+                    },
+                    "dateModified": {
+                      "type": "string",
+                      "description": "Date and time the book was last modified"
+                    },
+                    "retrieveAllBooks": {
+                      "type": "string",
+                      "description": "URL endpoint to retrieve all books"
+                    },
+                    "retrieveBook": {
+                      "type": "string",
+                      "description": "URL endpoint pattern to retrieve a specific book (replace `<id>` with the book ID)"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad request (e.g., missing data, invalid book ID, unauthorized access)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "string",
+                      "description": "Error message"
+                    },
+                    "detail": {
+                      "type": "string",
+                      "description": "Error details"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized access to the bookshelf",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "string",
+                      "description": "Error message"
+                    },
+                    "detail": {
+                      "type": "string",
+                      "description": "Error details"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Book not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "string",
+                      "description": "Error message"
+                    },
+                    "detail": {
+                      "type": "string",
+                      "description": "Error details"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal server error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "string",
+                      "description": "Error message"
+                    },
+                    "detail": {
+                      "type": "string",
+                      "description": "Error details"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "summary": "Delete a book",
+        "description": "Deletes a specific book within a bookshelf for the authenticated user",
+        "security": [{ "bearerAuth": [] }],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "description": "ID of the book to delete"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "bookshelfId": {
+                    "type": "string",
+                    "description": "ID of the bookshelf containing the book"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "204": {
+            "description": "Book deleted successfully (no content returned)"
+          },
+          "400": {
+            "description": "Bad request (e.g., missing data, invalid book ID, unauthorized access)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "string",
+                      "description": "Error message"
+                    },
+                    "detail": {
+                      "type": "string",
+                      "description": "Error details"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized access to the bookshelf",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "string",
+                      "description": "Error message"
+                    },
+                    "detail": {
+                      "type": "string",
+                      "description": "Error details"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Book not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "string",
+                      "description": "Error message"
+                    },
+                    "detail": {
+                      "type": "string",
+                      "description": "Error details"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal server error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "string",
+                      "description": "Error message"
+                    },
+                    "detail": {
+                      "type": "string",
+                      "description": "Error details"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/books": {
+      "get": {
+        "summary": "Get books (paginated)",
+        "description": "Retrieves a paginated list of books within a specific bookshelf for the authenticated user",
+        "security": [{ "bearerAuth": [] }],
+        "parameters": [
+          {
+            "name": "bookshelfId",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "description": "ID of the bookshelf to retrieve books from"
+            }
+          },
+          {
+            "name": "categoryId",
+            "in": "body",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "description": "ID of the category within the bookshelf (optional)"
+            }
+          },
+          {
+            "name": "page",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "description": "Page number (defaults to 0)"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Books retrieved successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "books": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "id": {
+                            "type": "string",
+                            "description": "ID of the book"
+                          },
+                          "name": {
+                            "type": "string",
+                            "description": "Name of the book"
+                          },
+                          "author": {
+                            "type": "string",
+                            "description": "Author of the book (optional)"
+                          },
+                          "publishedInYear": {
+                            "type": "integer",
+                            "description": "Year the book was published (optional)"
+                          },
+                          "numberOfPages": {
+                            "type": "integer",
+                            "description": "Number of pages in the book (optional)"
+                          },
+                          "bookshelfId": {
+                            "type": "string",
+                            "description": "ID of the bookshelf containing the book"
+                          },
+                          "categoryId": {
+                            "type": "string",
+                            "description": "ID of the category within the bookshelf (optional)"
+                          },
+                          "bookPath": {
+                            "type": "string",
+                            "description": "Path to the stored book file (implementation specific)"
+                          },
+                          "dateCreated": {
+                            "type": "string",
+                            "description": "Date and time the book was created"
+                          },
+                          "dateModified": {
+                            "type": "string",
+                            "description": "Date and time the book was last modified"
+                          }
+                        }
+                      }
+                    },
+                    "currentPage": {
+                      "type": "integer",
+                      "description": "Current page number (starts from 1)"
+                    },
+                    "previousPage": {
+                      "type": "string",
+                      "nullable": true,
+                      "description": "URL for the previous page (null if on the first page)"
+                    },
+                    "nextPage": {
+                      "type": "string",
+                      "nullable": true,
+                      "description": "URL for the next page (null if on the last page)"
+                    },
+                    "retrieveBook": {
+                      "type": "string",
+                      "description": "URL endpoint pattern to retrieve a specific book (replace `<id>` with the book ID)"
+                    },
+                    "removeBook": {
+                      "type": "string",
+                      "description": "URL endpoint pattern to remove a book (replace `<id>` with the book ID)"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad request (e.g., missing data, invalid bookshelf ID, unauthorized access)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "string",
+                      "description": "Error message"
+                    },
+                    "detail": {
+                      "type": "string",
+                      "description": "Error details"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized access to the bookshelf",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "string",
+                      "description": "Error message"
+                    },
+                    "detail": {
+                      "type": "string",
+                      "description": "Error details"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal server error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "string",
+                      "description": "Error message"
+                    },
+                    "detail": {
+                      "type": "string",
+                      "description": "Error details"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}

@@ -6,6 +6,10 @@ const AppController = require('./controllers/AppController');
 const UserController = require('./controllers/UserController');
 const Utils = require('./utils/Utils');
 
+const swaggerUi = require('swagger-ui-express');
+const swaggerDocument = require('./documentation/swagger.json');
+
+
 const app = express();
 const port = process.env.EXP_PORT;
 app.use(express.json());
@@ -41,6 +45,15 @@ app.use(
     await Utils.authentication(req, res, next);
   },
   protectedRoutes
+);
+
+/**
+ * Swagger entry point
+ */
+app.use(
+  '/api-docs',
+  swaggerUi.serve,
+  swaggerUi.setup(swaggerDocument)
 );
 
 /**

@@ -225,7 +225,7 @@ class BookshelfController {
       const bookshelf = await bookshelfCol
         .findOne({ parentId, _id: new ObjectId(shelfId) });
       if (!bookshelf) {
-        return res.status(401).json({
+        return res.status(404).json({
           error: 'shelf not found'
         });
       }
