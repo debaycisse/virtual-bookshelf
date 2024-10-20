@@ -6,10 +6,24 @@ const Utils = require('../utils/Utils');
 const baseUrl = 'http://127.0.0.1:5000/api/v1';
 
 class BookshelfController {
+  /**
+   * Takes required data to create a new bookshelf.
+   * Creates a new bookshelf instance and stores the same into the database.
+   * 
+   * @param {*} req - URL's request object
+   * @param {*} res - URL's response object
+   * @returns a newly created bookshelf's object
+   */
   static async createBookshelf(req, res) {
     res.setHeader('Content-Type', mime.contentType('json'));
     try {
       const userData = await Utils.extractJwt(req.headers['X-User']);
+
+      /**
+       * Retrieves, and validates a given user ID, which
+       * used as a parentId to the bookshelf, about to be
+       * created.
+       */
       const parentId = userData._id;
 
       if (!parentId) {
@@ -17,6 +31,10 @@ class BookshelfController {
           error: 'missing user\'s id',
         });
       }
+      /**
+       * Retrieves name to be used for the new bookshelf and
+       * performs checks to validate
+       */
       const shelfName = req.body.name;
       if (!shelfName) {
         return res.status(400).json({
@@ -34,6 +52,9 @@ class BookshelfController {
         });
       }
 
+      /**
+       * Creates and returns a created bookshelf object
+       */
       const dateCreated = new Date();
       const doc = await bookshelfCol.insertOne({
         parentId,
@@ -58,6 +79,15 @@ class BookshelfController {
     }
   }
 
+
+  /**
+   * Retrieves multiple set of bookshelfs, owned by a current user who
+   * makes the request
+   * 
+   * @param {*} req - URL's request object
+   * @param {*} res - URL's response object
+   * @returns a list, which contains multiple set of bookshelfs' data
+   */
   static async getBookshelfs(req, res) {
     res.setHeader('Content-Type', mime.contentType('json'));
     try {
@@ -66,12 +96,19 @@ class BookshelfController {
       const maxItems = 10;
       let { page } = req.query;
 
+      /**
+       * Parses the page, which is a url string to move between several pages
+       */
       if (!page) {
         page = 0;
       } else {
         page = Number(page);
       }
 
+      /**
+       * Validates the bookshelf's owner and aggragates the bookshelfs,
+       * owned by the current user
+       */
       if (!parentId) {
         return res.status(400).json({
           error: 'missing user\'s id',
@@ -115,6 +152,9 @@ class BookshelfController {
         });
       }
 
+      /**
+       * Parses the next and previous url for moving through pages
+       */
       let nextPage = null;
       const processedDocCount = page * maxItems + bookshelfList.length;
       const totalDocCount = await bookshelfCol
@@ -152,12 +192,22 @@ class BookshelfController {
     }
   }
 
+  /**
+   * Retrieves a bookshelf's data whose ID is given
+   * 
+   * @param {*} req - URL's request object
+   * @param {*} res - URL's response object
+   * @returns an object that contains the data of the bookshelf
+   */
   static async getBookshelf(req, res) {
     res.setHeader('Content-Type', mime.contentType('json'));
     try {
       const userData = await Utils.extractJwt(req.headers['X-User']);
       const parentId = userData._id;
 
+      /**
+       * Validates a given user's ID and bookshelf's ID
+       */
       if (!parentId) {
         return res.status(400).json({
           error: 'missing user\'s id',
@@ -180,6 +230,9 @@ class BookshelfController {
         });
       }
 
+      /**
+       * Returns an object that contains data of the bookshelf
+       */
       return res.status(200).json({
         id: bookshelf._id,
         name: bookshelf.name,
@@ -197,12 +250,22 @@ class BookshelfController {
     }
   }
 
+  /**
+   * Modifies a bookshelf's data whose ID is given
+   * 
+   * @param {*} req - URL's request object
+   * @param {*} res - URL's response object
+   * @returns an object that contains the updated data of the bookshelf
+   */
   static async modifyBookshelf(req, res) {
     res.setHeader('Content-Type', mime.contentType('json'));
     try {
       const userData = await Utils.extractJwt(req.headers['X-User']);
       const parentId = userData._id;
 
+      /**
+       * Validates a given user's ID and bookshelf's ID
+       */
       if (!parentId) {
         return res.status(400).json({
           error: 'missing user\'s id',
@@ -216,6 +279,10 @@ class BookshelfController {
         });
       }
 
+      /**
+       * Expects to be able to change only a bookshelf's name, so the
+       * name is validated below
+       */
       const shelfName = req.body.name;
       if (!shelfName) {
         return res.status(400).json({
@@ -224,13 +291,16 @@ class BookshelfController {
         });
       }
 
+      /**
+       * Ensures that a given bookshelf's ID is valid
+       */
       const bookshelfCol = await mongoDbClient.bookshelfCollection();
       let existingBookshelfs = await bookshelfCol
         .findOne({ parentId, _id: new ObjectId(shelfId) });
 
       if (!existingBookshelfs) {
         return res.status(404).json({
-          error: 'Invalid product\'s or parent\'s id'
+          error: 'Invalid bookshelf\'s or parent\'s id'
         });
       }
 
@@ -247,6 +317,9 @@ class BookshelfController {
         },
       };
 
+      /**
+       * Updates and tracks the status of the operation
+       */
       const updatedShelf = await bookshelfCol.updateOne(filter, update);
       if (updatedShelf.modifiedCount < 1) {
         return res.status(404).json({
@@ -276,12 +349,22 @@ class BookshelfController {
     }
   }
 
+  /**
+   * Deletes a bookshelf's data whose ID is given
+   * 
+   * @param {*} req - URL's request object
+   * @param {*} res - URL's response object
+   * @returns status 204 without any data to indicate operation's success 
+   */
   static async deleteBookshelf(req, res) {
     res.setHeader('Content-Type', mime.contentType('json'));
     try {
       const userData = await Utils.extractJwt(req.headers['X-User']);
       const parentId = userData._id;
 
+      /**
+       * Validates a given user's and a bookshelf's ID
+       */
       if (!parentId) {
         return res.status(400).json({
           error: 'Missing user\'s id',
@@ -295,6 +378,9 @@ class BookshelfController {
         });
       }
 
+      /**
+       * Verifies that the bookshelf is empty before attempting to delete it
+       */
       const isShelfEmpty = await Utils.isEmpty(parentId, 'bookshelf');
       if (!isShelfEmpty) {
         return res.status(400).json({
@@ -302,6 +388,10 @@ class BookshelfController {
         });
       }
 
+      /**
+       * Deletes and tracks the deletion operation status and return
+       * the status 204
+       */
       const bookshelfCol = await mongoDbClient.bookshelfCollection();
       const isDeleted = await bookshelfCol
         .deleteOne({ _id: new ObjectId(bookshelfId) });
