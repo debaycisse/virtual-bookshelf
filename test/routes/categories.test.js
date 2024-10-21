@@ -24,29 +24,29 @@ describe('Book Category Controller Endpoints Testing', () => {
     stubMiddleWare.restore();
   });
 
-  describe('Tests POST /api/v1/category', () => {
+  describe('Tests POST /api/v1/categories', () => {
     let stubCategory;
     const categoryPostData = {
-      url: `${serverBaseUrl}/category`,
+      url: `${serverBaseUrl}/categories`,
       json: {
         name: 'Science category',
         parentId: '670ba90f0fd871b721d2b1f6',
       },
     };
     const noNamePostData = {
-      url: `${serverBaseUrl}/category`,
+      url: `${serverBaseUrl}/categories`,
       json: {
         parentId: '670ba90f0fd871b721d2b1f6',
       },
     };
     const noParentIdPostData = {
-      url: `${serverBaseUrl}/category`,
+      url: `${serverBaseUrl}/categories`,
       json: {
         name: 'Science category',
       },
     };
     const emptyBodyPostData = {
-      url: `${serverBaseUrl}/category`,
+      url: `${serverBaseUrl}/categories`,
     };
 
     beforeEach(() => {
@@ -85,7 +85,7 @@ describe('Book Category Controller Endpoints Testing', () => {
             dateCreated: 'Sun, 13 Oct 2024 11:03:43 GMT',
             dateModified: 'Sun, 13 Oct 2024 11:03:43 GMT',
             retrieveAllCategories: 'http://127.0.0.1:5000/api/v1/categories',
-	          retrieveCategory: 'http://127.0.0.1:5000/api/v1/category/<:id>',
+	          retrieveCategory: 'http://127.0.0.1:5000/api/v1/categories/<:id>',
           });
         });
     });
@@ -135,16 +135,16 @@ describe('Book Category Controller Endpoints Testing', () => {
     });
   });
 
-  describe('Tests GET /api/v1/category/<id>', () => {
+  describe('Tests GET /api/v1/categories/<id>', () => {
     let stubCategory;
     const categoryGetData = {
-      url: `${serverBaseUrl}/category/670cd6957d3afeb10458f6a7`,
+      url: `${serverBaseUrl}/categories/670cd6957d3afeb10458f6a7`,
       json: {
         parentId: '670cd6657d3afeb10458f6a6',
       },  
     };
     const categoryGetDataNoParentId = {
-      url: `${serverBaseUrl}/category/670cd6957d3afeb10458f6a7`,
+      url: `${serverBaseUrl}/categories/670cd6957d3afeb10458f6a7`,
       json: {}
     };
 
@@ -173,7 +173,7 @@ describe('Book Category Controller Endpoints Testing', () => {
             dateCreated: 'Thursday 10, October, 2024',
             dateModified: 'Thursday 10, October, 2024', 
             retrieveAllCategories: 'http://127.0.0.1:5000/api/v1/categories',
-            retrieveCategory: 'http://127.0.0.1:5000/api/v1/category/<:id>',
+            retrieveCategory: 'http://127.0.0.1:5000/api/v1/categories/<:id>',
           });
         });
     });
@@ -246,7 +246,7 @@ describe('Book Category Controller Endpoints Testing', () => {
             previousPage:null,
             nextPage: null,
             retrieveAllCategories: 'http://127.0.0.1:5000/api/v1/categories',
-            retrieveCategory: 'http://127.0.0.1:5000/api/v1/category/<:id>',
+            retrieveCategory: 'http://127.0.0.1:5000/api/v1/categories/<:id>',
           });
         });
     });
@@ -288,16 +288,16 @@ describe('Book Category Controller Endpoints Testing', () => {
     });
   });
 
-  describe('Tests PUT /api/v1/category/<id>', () => {
+  describe('Tests PUT /api/v1/categories/<id>', () => {
     let stubCategory;
     const categoryPutData = {
-      url: `${serverBaseUrl}/category/670cd6957d3afeb10458f6a7`,
+      url: `${serverBaseUrl}/categories/670cd6957d3afeb10458f6a7`,
       json: {
         parentId: '670cd6657d3afeb10458f6a6',
       },  
     };
     const categoryPutDataNoParentId = {
-      url: `${serverBaseUrl}/category/670cd6957d3afeb10458f6a7`,
+      url: `${serverBaseUrl}/categories/670cd6957d3afeb10458f6a7`,
       json: {}
     };
 
@@ -326,8 +326,8 @@ describe('Book Category Controller Endpoints Testing', () => {
             message: 'updated category successfully',
             dateCreated: 'Thursday 10, October, 2024',
             dateModified: 'Thursday 10, October, 2024', 
-            retrieveCategory: 'http://127.0.0.1:5000/api/v1/category/<:id>',
-            removeCategory: 'http://127.0.0.1:5000/api/v1/category/<:id>',
+            retrieveCategory: 'http://127.0.0.1:5000/api/v1/categories/<:id>',
+            removeCategory: 'http://127.0.0.1:5000/api/v1/categories/<:id>',
           });
         });
     });
@@ -361,16 +361,16 @@ describe('Book Category Controller Endpoints Testing', () => {
     });
   });
 
-  describe('Tests DELETE /api/v1/category/<id>', () => {
+  describe('Tests DELETE /api/v1/categories/<id>', () => {
     let stubCategory;
     const categoryPutData = {
-      url: `${serverBaseUrl}/category/670cd6957d3afeb10458f6a7`,
+      url: `${serverBaseUrl}/categories/670cd6957d3afeb10458f6a7`,
       json: {
         parentId: '670cd6657d3afeb10458f6a6',
       },  
     };
     const categoryPutDataNoParentId = {
-      url: `${serverBaseUrl}/category/670cd6957d3afeb10458f6a7`,
+      url: `${serverBaseUrl}/categories/670cd6957d3afeb10458f6a7`,
       json: {}
     };
 

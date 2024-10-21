@@ -23,10 +23,10 @@ describe('Bookshelf Controller Endpoints Testing', () => {
     stubMiddleWare.restore();
   });
 
-  describe('Tests POST /api/v1/bookshelf', () => {
+  describe('Tests POST /api/v1/bookshelfs', () => {
     let stubBookshelf;
     const bookshelfPostData = {
-      url: `${serverBaseUrl}/bookshelf`,
+      url: `${serverBaseUrl}/bookshelfs`,
       json: {
         name: 'My Virtual Bookshelf',
       },
@@ -45,7 +45,7 @@ describe('Bookshelf Controller Endpoints Testing', () => {
             authenticationHeader: req.headers['X-User'] || null,
             dateCreated: 'Thursday 10, October, 2024',
             retrieveBookshelfsEndpoint: 'http://127.0.0.1/api/v1/bookshelfs',
-            retrieveBookshelfEndpoint: 'http://127.0.0.1/api/v1/bookshelf/<:id>',
+            retrieveBookshelfEndpoint: 'http://127.0.0.1/api/v1/bookshelfs/<:id>',
           });
         });
     });
@@ -90,7 +90,7 @@ describe('Bookshelf Controller Endpoints Testing', () => {
   describe('Tests GET /api/v1/bookshelf/:id', () => {
     let stubBookshelf;
     const requestData = {
-      url: `${serverBaseUrl}/bookshelf/670a46ccd9341f13294c2da5`,
+      url: `${serverBaseUrl}/bookshelfs/670a46ccd9341f13294c2da5`,
       json: {},
     };
 
@@ -104,7 +104,7 @@ describe('Bookshelf Controller Endpoints Testing', () => {
             ownerId: 'poiuyt-098765-4321',
             dateCreated: 'Thursday 10, October, 2024',
             retrieveAllBookshelfs: 'http://127.0.0.1/api/v1/bookshelfs',
-            removeBookshelf: 'http://127.0.0.1/api/v1/bookshelf/<:id>',
+            removeBookshelf: 'http://127.0.0.1/api/v1/bookshelfs/<:id>',
           });
         });
     });
@@ -148,8 +148,8 @@ describe('Bookshelf Controller Endpoints Testing', () => {
                 dateCreated: 'Thursday 12, October, 2024',
               }
             ],
-            retrieveBookshelf: 'http://127.0.0.1/api/v1/bookshelf/<:id>',
-            removeBookshelf: 'http://127.0.0.1/api/v1/bookshelf/<:id>',
+            retrieveBookshelf: 'http://127.0.0.1/api/v1/bookshelfs/<:id>',
+            removeBookshelf: 'http://127.0.0.1/api/v1/bookshelfs/<:id>',
           });
         });
     });
@@ -183,10 +183,10 @@ describe('Bookshelf Controller Endpoints Testing', () => {
     });
   });
 
-  describe('Tests PUT /api/v1/bookshelf/:id', () => {
+  describe('Tests PUT /api/v1/bookshelfs/:id', () => {
     let stubBookshelf;
     const putData = {
-      url: `${serverBaseUrl}/bookshelf/670a46ccd9341f13294c2da5`,
+      url: `${serverBaseUrl}/bookshelfs/670a46ccd9341f13294c2da5`,
       json: {
         name: 'My Virtual Bookshelf new name',
       },
@@ -203,7 +203,7 @@ describe('Bookshelf Controller Endpoints Testing', () => {
             dateCreated: 'Thursday 10, October, 2024',
             dateModified: `${(new Date).toUTCString()}`,
             retrieveAllBookshelfs: 'http://127.0.0.1/api/v1/bookshelfs',
-            removeBookshelf: 'http://127.0.0.1/api/v1/bookshelf/<:id>',
+            removeBookshelf: 'http://127.0.0.1/api/v1/bookshelfs/<:id>',
           });
         });
     });
@@ -237,10 +237,10 @@ describe('Bookshelf Controller Endpoints Testing', () => {
     });
   });
 
-  describe('Tests DELETE /api/v1/bookshelf/:id', () => {
+  describe('Tests DELETE /api/v1/bookshelfs/:id', () => {
     let stubBookshelf;
     const deleteData = {
-      url: `${serverBaseUrl}/bookshelf/670a46ccd9341f13294c2da5`,
+      url: `${serverBaseUrl}/bookshelfs/670a46ccd9341f13294c2da5`,
       json: {}
     };
 

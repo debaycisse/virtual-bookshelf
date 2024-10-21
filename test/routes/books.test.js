@@ -34,7 +34,7 @@ describe('Book Controller Endpoints Testing', () => {
     stubMiddleWare.restore();
   });
 
-  describe('Tests POST /api/v1/book', () => {
+  describe('Tests POST /api/v1/books', () => {
     let stubBook;
     let bookPostData;
     let bookPostDataNoBookshelf;
@@ -42,7 +42,7 @@ describe('Book Controller Endpoints Testing', () => {
 
     beforeEach(() => {
       bookPostData = {
-        url: `${serverBaseUrl}/book`,
+        url: `${serverBaseUrl}/books`,
         json: {
           name: 'The cave of a million eye',
           author: 'Egele Michael',
@@ -53,7 +53,7 @@ describe('Book Controller Endpoints Testing', () => {
         },
       };
       bookPostDataNoBookshelf = {
-        url: `${serverBaseUrl}/book`,
+        url: `${serverBaseUrl}/books`,
         json: {
           name: 'The cave of a million eye',
           author: 'Egele Michael',
@@ -63,7 +63,7 @@ describe('Book Controller Endpoints Testing', () => {
         },
       };
       bookPostDataWrongCategory = {
-        url: `${serverBaseUrl}/book`,
+        url: `${serverBaseUrl}/books`,
         json: {
           name: 'The cave of a million eye',
           author: 'Egele Michael',
@@ -112,7 +112,7 @@ describe('Book Controller Endpoints Testing', () => {
             dateCreated: 'Thursday 18, October, 2024',
             dateModified: 'Thursday 18, October, 2024',
             reriveAllBooks: `${serverBaseUrl}/books`,
-            retrieveBook: `${serverBaseUrl}/book/<id>`,
+            retrieveBook: `${serverBaseUrl}/books/<id>`,
           });
         });
     });
@@ -157,14 +157,14 @@ describe('Book Controller Endpoints Testing', () => {
     });
   });
 
-  describe('Tests GET /api/v1/book/<id>', () => {
+  describe('Tests GET /api/v1/books/<id>', () => {
     let stubBook;
     let bookGetData;
     let bookGetDataNoBookshelfId;
 
     beforeEach(() => {
       bookGetData = {
-        url: `${serverBaseUrl}/book/67117af4183a53cf798f0bf2`,
+        url: `${serverBaseUrl}/books/67117af4183a53cf798f0bf2`,
         json: {
           bookshelfId: 'bookshelf002',
           categoryId: '976ed90f0fd873a321d2bf3ed',
@@ -172,7 +172,7 @@ describe('Book Controller Endpoints Testing', () => {
       };
 
       bookGetDataNoBookshelfId = {
-        url: `${serverBaseUrl}/book/67117af4183a53cf798f0bf2`,
+        url: `${serverBaseUrl}/books/67117af4183a53cf798f0bf2`,
         json: {
           categoryId: '976ed90f0fd873a321d2bf3ed',
         },
@@ -213,7 +213,7 @@ describe('Book Controller Endpoints Testing', () => {
           dateCreated: 'Thursday 18, October, 2024',
           dateModified: 'Thursday 18, October, 2024',
           reriveAllBooks: `${serverBaseUrl}/books`,
-          createBook: `${serverBaseUrl}/book`,
+          createBook: `${serverBaseUrl}/books`,
         });
       });
     });
@@ -310,8 +310,8 @@ describe('Book Controller Endpoints Testing', () => {
             currentPage: 1,
             previousPage: null,
             nextPage: null,
-            retrieveBook: `${serverBaseUrl}/book/<id>`,
-            removeBook: `${serverBaseUrl}/book/<id>`,
+            retrieveBook: `${serverBaseUrl}/books/<id>`,
+            removeBook: `${serverBaseUrl}/books/<id>`,
           });
         });
     });
@@ -346,13 +346,13 @@ describe('Book Controller Endpoints Testing', () => {
     });
   });
 
-  describe('Tests PUT /api/v1/book/<id>', () => {
+  describe('Tests PUT /api/v1/books/<id>', () => {
     let stubBook;
     let bookPutData;
     let bookPutDataNoBookshelfId;
 
     bookPutData = {
-      url: `${serverBaseUrl}/book/67117af4183a53cf798f0bf2`,
+      url: `${serverBaseUrl}/books/67117af4183a53cf798f0bf2`,
       json: {
         name: 'New Name',
         author: 'Corrected Author\'s Name',
@@ -364,7 +364,7 @@ describe('Book Controller Endpoints Testing', () => {
     };
 
     bookPutDataNoBookshelfId = {
-      url: `${serverBaseUrl}/book/67117af4183a53cf798f0bf2`,
+      url: `${serverBaseUrl}/books/67117af4183a53cf798f0bf2`,
       json: {
         name: 'New Name',
         author: 'Corrected Author\'s Name',
@@ -412,8 +412,8 @@ describe('Book Controller Endpoints Testing', () => {
             bookPath: '/bookshelf/books/test001.pdf',
             dateCreated: 'Friday 18, October, 2024',
             dateModified: 'Saturday 19, October, 2024',
-            retrieveBook: `${serverBaseUrl}/book/<id>`,
-            removeBook: `${serverBaseUrl}/book/<id>`,
+            retrieveBook: `${serverBaseUrl}/books/<id>`,
+            removeBook: `${serverBaseUrl}/books/<id>`,
           });          
         });
     });
@@ -461,13 +461,13 @@ describe('Book Controller Endpoints Testing', () => {
     });
   });
 
-  describe('Tests DELETE /api/v1/book', () => {
+  describe('Tests DELETE /api/v1/books/<id>', () => {
     let stubBook;
     let bookDeleteData;
     let bookDeleteDataNoBookshelf;
 
     bookDeleteData = {
-      url: `${serverBaseUrl}/book/67117af4183a53cf798f0bf2`,
+      url: `${serverBaseUrl}/books/67117af4183a53cf798f0bf2`,
       json: {
         bookshelfId: 'bookshelf001',
         categoryId: '975ed90f0fd873a321d2bf3ed', 
@@ -475,7 +475,7 @@ describe('Book Controller Endpoints Testing', () => {
     };
 
     bookDeleteDataNoBookshelf = {
-      url: `${serverBaseUrl}/book/67117af4183a53cf798f0bf2`,
+      url: `${serverBaseUrl}/books/67117af4183a53cf798f0bf2`,
       json: {
         categoryId: '975ed90f0fd873a321d2bf3ed', 
       }

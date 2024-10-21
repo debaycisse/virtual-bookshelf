@@ -284,6 +284,7 @@ class BookshelfController {
        * name is validated below
        */
       const shelfName = req.body.name;
+      console.log(`${shelfName}`)
       if (!shelfName) {
         return res.status(400).json({
           error: 'Bookshelf\'s name can not be missing',
