@@ -94,29 +94,8 @@ class CategoryController {
     res.setHeader('Content-Type', mime.contentType('json'));
     try {
       const userData = await Utils.extractJwt(req.headers['X-User']);
-      const parentId = req.body.parentId;
-      /**
-       * Validates a given bookshelf's ID
-       */
-      if (!parentId) {
-        return res.status(400).json({
-          error: 'Parent ID can not be missing',
-        });
-      }
-
-      if (!(await mongoDbClient.verifyDocType(parentId, 'bookshelf'))) {
-        return res.status(400).json({
-          error: 'Invalid parent ID',
-        });
-      }
-      /**
-       * Verifies that a current user can access a given bookshelf
-       */
-      if (!(Utils.ownsBookshelf(userData._id, parentId))) {
-        return res.status(401).json({
-          error: 'Unauthorized access',
-        });
-      }
+      const categoryCol = await mongoDbClient.categoryCollection();
+      
       /**
        * Validates a given book category's ID
        */
@@ -126,18 +105,27 @@ class CategoryController {
           error: 'Document\'s id can not be missing',
         });
       }
-      const filter = {
-        _id: new ObjectId(categoryId),
-        parentId,
-      }
-      const categoryDoc = await mongoDbClient
-        .findDoc(filter, 'category');
+      
+      const categoryDoc = await categoryCol.findOne(
+        { _id: new ObjectId(categoryId) },
+      );
 
       if (!categoryDoc) {
         return res.status(404).json({
           error: 'Not found',
         });
       }
+
+      /**
+       * Verifies that a current user can access a given bookshelf
+       */
+      const parentId = categoryDoc.parentId;
+      if (!(Utils.ownsBookshelf(userData._id, parentId))) {
+        return res.status(401).json({
+          error: 'Unauthorized access',
+        });
+      }
+      
       /**
        * Returnns a found data of the book category
        */
@@ -170,9 +158,19 @@ class CategoryController {
     res.setHeader('Content-Type', mime.contentType('json'));
     try {
       const userData = await Utils.extractJwt(req.headers['X-User']);
-      const parentId = req.body.parentId;
       const maxItems = 10;
       let { page } = req.query;
+
+      const categoryCol = await mongoDbClient.categoryCollection();
+
+      // Get bookshelfs where this user appears as parentID
+      const bookshelfCol = await mongoDbClient.bookshelfCollection();
+      const userBookshelfDocs = await bookshelfCol
+        .find(
+          { parentId: userData._id },
+        ).toArray();
+      const userBookshelfIds = userBookshelfDocs
+        .map(bookshelf => bookshelf._id.toString());
 
       /**
        * Parses a url string query, named page to allow user to move
@@ -185,36 +183,12 @@ class CategoryController {
       }
 
       /**
-       * Validates a given user's and bookshelf's ID 
-       */
-      if (!parentId) {
-        return res.status(400).json({
-          error: 'Parent ID can not be missing',
-        });
-      }
-      if (!(await mongoDbClient.verifyDocType(parentId, 'bookshelf'))) {
-        return res.status(400).json({
-          error: 'Invalid parent ID',
-        });
-      }
-
-      /**
-       * Ensures a user can access a given bookshelf
-       */
-      if (!(Utils.ownsBookshelf(userData._id, parentId))) {
-        return res.status(401).json({
-          error: 'Unauthorized access',
-        });
-      }
-
-      /**
        * Aggregates multiple book categories and converts them to an array
        */
       let categoryList = [];
-      const categoryCol = await mongoDbClient.categoryCollection();
       const pipline = [
         {
-          $match: { parentId: parentId },
+          $match: { parentId: { $in: userBookshelfIds } },
         },
         {
           $project: {
@@ -258,7 +232,7 @@ class CategoryController {
       let nextPage = null;
       const processedDocCount = page * maxItems + categories.length;
       const totalDocCount = await categoryCol
-        .countDocuments({ parentId });
+        .countDocuments({ parentId: { $in: userBookshelfIds } });
 
       if (totalDocCount > processedDocCount) {
         nextPage = page + 1;
@@ -399,30 +373,6 @@ class CategoryController {
     res.setHeader('Content-Type', mime.contentType('json'));
     try {
       const userData = await Utils.extractJwt(req.headers['X-User']);
-      const parentId = req.body.parentId;
-      /**
-       * Validates a given user's and bookshelf ID
-       */
-      if (!parentId) {
-        return res.status(400).json({
-          error: 'Parent ID can not be missing',
-        });
-      }
-
-      if (!(await mongoDbClient.verifyDocType(parentId, 'bookshelf'))) {
-        return res.status(400).json({
-          error: 'Invalid parent ID',
-        });
-      }
-
-      /**
-       * Verifies a given usr can access a given bookshelf
-       */
-      if (!(Utils.ownsBookshelf(userData._id, parentId))) {
-        return res.status(401).json({
-          error: 'Unauthorized access',
-        });
-      }
 
       /**
        * Ensures that a given book category to be deleted, indeed exists
@@ -432,6 +382,61 @@ class CategoryController {
         return res.status(400).json({
           error: 'Document\'s id can not be missing',
         });
+      }
+
+      const categoryCol = await mongoDbClient.categoryCollection();
+
+      // const parentId = req.body.parentId;
+      // /**
+      //  * Validates a given user's and bookshelf ID
+      //  */
+      // if (!parentId) {
+      //   return res.status(400).json({
+      //     error: 'Parent ID can not be missing',
+      //   });
+      // }
+
+      // if (!(await mongoDbClient.verifyDocType(parentId, 'bookshelf'))) {
+      //   return res.status(400).json({
+      //     error: 'Invalid parent ID',
+      //   });
+      // }
+
+      // /**
+      //  * Verifies a given usr can access a given bookshelf
+      //  */
+      // if (!(Utils.ownsBookshelf(userData._id, parentId))) {
+      //   return res.status(401).json({
+      //     error: 'Unauthorized access',
+      //   });
+      // }
+
+      /// find the bookshelf associtaed with it
+      const categoryDoc = await categoryCol.findOne(
+        { _id: new ObjectId(categoryId) },
+      )
+      if (!categoryDoc) {
+        return res.status(400).json({
+          error: 'Invalid category\'s ID',
+        });
+      }
+
+      // Check if this user owns it
+      const bookshelfAssociated = categoryDoc.parentId;
+      const bookshelfCol = await mongoDbClient.bookshelfCollection();
+      const bookshelfDoc = await bookshelfCol.findOne({
+        _id: new ObjectId(bookshelfAssociated),
+      });
+      if (!bookshelfDoc) {
+        return res.status(404).json({
+          error: 'Invalid bookshelf or parentId',
+        });
+      }
+
+      if (!Utils.ownsBookshelf(userData._id, bookshelfDoc._id)) {
+        return res.status(401).json({
+          error: 'Unauthorized access',
+        })
       }
 
       /**
@@ -448,7 +453,6 @@ class CategoryController {
       /**
        * Deletes a book category and tracks the operation status
        */
-      const categoryCol = await mongoDbClient.categoryCollection();
       const isDeleted = await categoryCol
         .deleteOne({ _id: new ObjectId(categoryId) });
       if (Number(isDeleted?.deletedCount) > 0) {

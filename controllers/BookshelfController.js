@@ -226,7 +226,7 @@ class BookshelfController {
         .findOne({ parentId, _id: new ObjectId(shelfId) });
       if (!bookshelf) {
         return res.status(404).json({
-          error: 'shelf not found'
+          error: 'Bookshelf not found'
         });
       }
 

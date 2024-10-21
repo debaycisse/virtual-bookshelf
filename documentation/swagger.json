@@ -1435,15 +1435,6 @@
               "type": "string",
               "description": "ID of the book category to delete"
             }
-          },
-          {
-            "name": "parentId",
-            "in": "body",
-            "required": true,
-            "schema": {
-              "type": "string",
-              "description": "ID of the bookshelf containing the category"
-            }
           }
         ],
         "responses": {
@@ -1688,24 +1679,6 @@
         "security": [{ "bearerAuth": [] }],
         "parameters": [
           {
-            "name": "bookshelfId",
-            "in": "body",
-            "required": true,
-            "schema": {
-              "type": "string",
-              "description": "ID of the bookshelf to retrieve books from"
-            }
-          },
-          {
-            "name": "categoryId",
-            "in": "body",
-            "required": false,
-            "schema": {
-              "type": "string",
-              "description": "ID of the category within the bookshelf (optional)"
-            }
-          },
-          {
             "name": "page",
             "in": "query",
             "required": false,
@@ -1877,26 +1850,6 @@
             }
           }
         ],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "type": "object",
-                "properties": {
-                  "bookshelfId": {
-                    "type": "string",
-                    "description": "ID of the bookshelf containing the book"
-                  },
-                  "categoryId": {
-                    "type": "string",
-                    "description": "ID of the category within the bookshelf (optional)"
-                  }
-                }
-              }
-            }
-          }
-        },
         "responses": {
           "200": {
             "description": "Book retrieved successfully",

@@ -68,7 +68,7 @@ class BookController {
             error: 'Unauthorized book category access',
           });
         }
-        
+
         /**
          * Does a given category exist in a given bookshelf
          */
@@ -189,125 +189,25 @@ class BookController {
       }
 
       /**
-       * Ensures that bookshelf is provided
-       */
-      const bookshelfId = req.body.bookshelfId;
-      if (!bookshelfId) {
-        return res.status(400).json({
-          error: 'Bookshelf can not be missing',
-        });
-      }
-
-      const isBookshelf = await mongoDbClient
-        .verifyDocType(bookshelfId, 'bookshelf');
-      if (!isBookshelf) {
-        return res.status(400).json({
-          error: 'Bookshelf does not exist',
-        });
-      }
-
-      /**
        * Does the current user owns the Bookshelf
        */
+      bookDoc = await bookCol.findOne({
+        _id: new ObjectId(bookId),
+      });
+
+      if (!bookDoc) {
+        return res.status(404).json({
+          error: 'Book not foound',
+        });
+      }
+
+      const bookshelfId = bookDoc.bookshelfId;
       const userOwnsBookshelf = await Utils
-      .ownsBookshelf(userData._id, bookshelfId);
+        .ownsBookshelf(userData._id, bookshelfId);
       if (!userOwnsBookshelf) {
         return res.status(401).json({
           error: 'Unauthorized bookshelf access'
         });
-      }
-      
-      /**
-       * If category's ID is given, does the current user possess the category
-       */
-      const categoryId = req.body.categoryId;
-      if (categoryId) {
-        const isCategory = await mongoDbClient
-          .verifyDocType(categoryId, 'category');
-        if (!isCategory) {
-          return res.status(404).json({
-            error: 'Category does not exist',
-          });
-        }
-        
-        const userOwnsCategory = await Utils
-          .ownsCategory(userData._id, categoryId);
-        if (!userOwnsCategory) {
-          return res.status(401).json({
-            error: 'Unauthorized book category access',
-          });
-        }
-
-        /**
-         * Is a given category located in a given bookshelf
-         */
-        if (!await Utils.bookshelfOwnsCategory(bookshelfId, categoryId)) {
-          return res.status(404).json({
-            error: 'Category does not exist in a given bookshelf',
-          });
-        }
-
-        /**
-         * Find the book, using both its ID, the given bookshelf's ID,
-         * and the given category's ID
-         */
-        bookDoc = await bookCol
-          .findOne({
-            _id: new ObjectId(bookId),
-            bookshelfId: bookshelfId,
-            categoryId: categoryId,
-          });
-
-        if (!bookDoc) {
-          return res.status(404).json({
-            error: 'Book not foound',
-          });
-        }
-      } else {
-        /**
-         * Does the book's categoryId exist in the bookshelf
-         */
-        const tempBook = await bookCol.find({ _id: new ObjectId(bookId) });
-        const bookUsedCategoryId = tempBook?.categoryId;
-        if (bookUsedCategoryId) {
-          if (!await Utils.bookshelfOwnsCategory(bookshelfId, bookUsedCategoryId)) {
-            return res.status(404).json({
-              error: 'Category does not exist in a given bookshelf',
-            });
-          }
-        }
-        /**
-         * Find the book, using both its ID, and the given bookshelf's ID,
-         * since no category is given
-         */
-        bookDoc = await bookCol
-          .findOne({
-            _id: new ObjectId(bookId),
-            bookshelfId: bookshelfId,
-          });
-
-        if (!bookDoc) {
-          return res.status(404).json({
-            error: 'Book not foound',
-          });
-        }
-
-        /**
-         * Ensures that the cateogry of the book is
-         * located in the provided bookshelf
-         */
-        const bookCategoryId = bookDoc.categoryId;
-        if (bookCategoryId) {
-          const categoryCol = await mongoDbClient.categoryCollection();
-          const categoryDoc = categoryCol
-            .findOne({ _id: new ObjectId(bookCategoryId) });
-          const categoryParentId = categoryDoc.parentId;
-          if (categoryParentId !== bookshelfId) {
-            return res.status(401).json({
-              error: 'Category is not located in the given bookshelf',
-            });
-          }
-        }
       }
 
       /**
@@ -321,8 +221,8 @@ class BookController {
         publishedInYear: bookDoc.publishedInYear? bookDoc.publishedInYear : null,
         numberOfPages: bookDoc.numberOfPages? bookDoc.numberOfPages : null,
         bookshelfId: bookDoc.bookshelfId,
-        categoryId: categoryId? bookDoc.categoryId : null,
-        bookPath: bookDoc.path,
+        categoryId: bookDoc?.categoryId? bookDoc?.categoryId : null,
+        bookPath: bookDoc.bookPath,
         dateCreated: bookDoc.dateCreated,
         dateModified: bookDoc.dateModified,
         retrieveAllBooks: `${baseUrl}/books`,
@@ -360,73 +260,29 @@ class BookController {
         page = Number(page);
       }
 
-      /**
-       * Ensures that bookshelf is provided
-       */
-      const bookshelfId = req.body.bookshelfId;
-      if (!bookshelfId) {
-        return res.status(400).json({
-          error: 'Bookshelf can not be missing',
-        });
-      }
+      // Get bookshelfs where this user appears as parentID
+      const bookshelfCol = await mongoDbClient.bookshelfCollection();
+      const userBookshelfDocs = await bookshelfCol
+        .find(
+          { parentId: userData._id },
+        ).toArray();
+      const userBookshelfIds = userBookshelfDocs
+        .map(bookshelf => bookshelf._id.toString());
 
-      const isBookshelf = await mongoDbClient
-        .verifyDocType(bookshelfId, 'bookshelf');
-      if (!isBookshelf) {
-        return res.status(400).json({
-          error: 'Bookshelf does not exist',
-        });
-      }
-
-      /**
-       * Does the current user have access to the Bookshelf
-       */
-      const userOwnsBookshelf = await Utils
-        .ownsBookshelf(userData._id, bookshelfId);
-      if (!userOwnsBookshelf) {
-        return res.status(401).json({
-          error: 'Unauthorized bookshelf access'
-        });
-      }
-
-      /**
-       * If category's ID is given, does the current user have access to it
-       */
-      const categoryId = req.body.categoryId;
-      if (categoryId) {
-        const isCategory = await mongoDbClient
-          .verifyDocType(categoryId, 'category');
-        if (!isCategory) {
-          return res.status(404).json({
-            error: 'Category does not exist',
-          });
-        }
-        /**
-         * Is a given category located in a given bookshelf
-         */
-        if (!await Utils.bookshelfOwnsCategory(bookshelfId, categoryId)) {
-          return res.status(404).json({
-            error: 'Category does not exist in a given bookshelf',
-          });
-        }
-        filters = {
-          bookshelfId,
-          categoryId
-        };
-
-      } else {
-        filters = {
-          bookshelfId
+      filters = {
+        bookshelfId: {
+          $in: userBookshelfIds,
         }
       }
-
       /**
        * Creates pipeline, which is used in the aggregate function of the
        * database to create a pagination
        */
       const pipeline = [
         {
-          $match: filters
+          $match: {
+            bookshelfId: { $in: userBookshelfIds },
+          }
         },
         {
           $project: {
@@ -454,6 +310,7 @@ class BookController {
       const books = await bookCol
         .aggregate(pipeline).toArray();
 
+      console.log(`books.length  ${books.length}`)
       /**
        * Rearranges the elements for each of the aggregated data
        */
@@ -498,7 +355,7 @@ class BookController {
       }
 
       return res.status(200).json({
-        books: bookList,
+        books: bookList? bookList : [],
         currentPage,
         previousPage,
         nextPage: nextPage? `${baseUrl}/books?page=${nextPage}` : null,
