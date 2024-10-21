@@ -51,7 +51,7 @@ class BookController {
       /**
        * Retrieves, validates, and authenticates a given book's category
        */
-      const categoryId = req.body.categoryId;
+      const categoryId = req.body?.categoryId;
       if (categoryId) {
         const isCategory = await mongoDbClient
           .verifyDocType(categoryId, 'category');
@@ -68,16 +68,17 @@ class BookController {
             error: 'Unauthorized book category access',
           });
         }
+        
+        /**
+         * Does a given category exist in a given bookshelf
+         */
+        if (!await Utils.bookshelfOwnsCategory(bookshelfId, categoryId)) {
+          return res.status(404).json({
+            error: 'Category does not exist in a given bookshelf',
+          });
+        }
       }
 
-      /**
-       * Does a given category exist in a given bookshelf
-       */
-      if (!await Utils.bookshelfOwnsCategory(bookshelfId, categoryId)) {
-        return res.status(404).json({
-          error: 'Category does not exist in a given bookshelf',
-        });
-      }
   
       /**
        * Uploads and creates the actual book (e-book).
