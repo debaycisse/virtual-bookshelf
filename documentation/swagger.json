@@ -998,15 +998,6 @@
         "security": [{ "bearerAuth": [] }],
         "parameters": [
           {
-            "name": "parentId",
-            "in": "body",
-            "required": true,
-            "schema": {
-              "type": "string",
-              "description": "ID of the bookshelf to retrieve categories from"
-            }
-          },
-          {
             "name": "page",
             "in": "query",
             "required": false,
@@ -2203,22 +2194,6 @@
             }
           }
         ],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "type": "object",
-                "properties": {
-                  "bookshelfId": {
-                    "type": "string",
-                    "description": "ID of the bookshelf containing the book"
-                  }
-                }
-              }
-            }
-          }
-        },
         "responses": {
           "204": {
             "description": "Book deleted successfully (no content returned)"

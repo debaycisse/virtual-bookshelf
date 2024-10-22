@@ -137,8 +137,8 @@ class MongoDBClient {
   async findDoc(filterObj, docType) {
     let docCol = null;
 
-    if (docType === 'book') docCol = this.bookCollection();
-    if (docType === 'bookshelf') docCol = this.bookshelfCollection();
+    if (docType === 'book') docCol = await this.bookCollection();
+    if (docType === 'bookshelf') docCol = await this.bookshelfCollection();
     if (docType === 'category') docCol = await this.categoryCollection();
     if (docType === 'user') docCol = await this.userCollection();
 

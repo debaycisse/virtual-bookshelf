@@ -143,7 +143,7 @@ class BookController {
         bookPath: fileFullePath,
         dateCreated: date.toLocaleString(),
         dateModified: date.toLocaleString(),
-        retrieveBook: `${baseUrl}/book`,
+        retrieveBook: `${baseUrl}/books/<id>`,
         retrieveAllBooks: `${baseUrl}/books`,
       });
     } catch (error) {
@@ -226,7 +226,7 @@ class BookController {
         dateCreated: bookDoc.dateCreated,
         dateModified: bookDoc.dateModified,
         retrieveAllBooks: `${baseUrl}/books`,
-        createBook: `${baseUrl}/book`,
+        createBook: `${baseUrl}/books`,
       });
     } catch (error) {
       return res.status(500).json({
@@ -310,7 +310,6 @@ class BookController {
       const books = await bookCol
         .aggregate(pipeline).toArray();
 
-      console.log(`books.length  ${books.length}`)
       /**
        * Rearranges the elements for each of the aggregated data
        */
@@ -359,8 +358,8 @@ class BookController {
         currentPage,
         previousPage,
         nextPage: nextPage? `${baseUrl}/books?page=${nextPage}` : null,
-        retrieveBook: `${baseUrl}/book/<id>`,
-        removeBook: `${baseUrl}/book/<id>`,
+        retrieveBook: `${baseUrl}/books/<id>`,
+        removeBook: `${baseUrl}/books/<id>`,
       });
 
     } catch (error) {
@@ -409,12 +408,6 @@ class BookController {
        * Retrieves and validates a provided bookshelf
        */
       const bookshelfId = req.body.bookshelfId;
-
-      if (!bookshelfId) {
-        return res.status(400).json({
-          error: 'Bookshelf can not be missing',
-        });
-      }
       
       const isBookshelf = await mongoDbClient
         .verifyDocType(bookshelfId, 'bookshelf');
@@ -438,7 +431,7 @@ class BookController {
       /**
        * Retrieves and parses the category's ID, if one is provided
        */
-      const categoryId = req.body.categoryId;
+      const categoryId = req.body?.categoryId;
       if (categoryId) {
         const isCategory = await mongoDbClient
           .verifyDocType(categoryId, 'category');
@@ -482,17 +475,21 @@ class BookController {
 
       const existingCategoryId = tempBook?.categoryId? 
         tempBook?.categoryId : categoryId;
+
       /**
        * Updates the book
        */
+      const existingRecord = await mongoDbClient
+        .findDoc(filter, 'book');
+
       const {
         name, author, publishedInYear, numberOfPages,
       } = req.body;
       const date = new Date();      
       const update = {
         $set: {
-          name,
-          author,
+          name: name? name : existingRecord.name,
+          author: author? author : existingRecord.author,
           categoryId: categoryId? categoryId : bookUsedCategoryId,
           dateModified: date.toLocaleString(),
         },
@@ -534,7 +531,6 @@ class BookController {
        */
       const updatedBook = await bookCol
         .findOne({ _id: new ObjectId(bookId) });
-      console.log(`${JSON.stringify(updatedBook)}`)
       return res.status(200).json({
         id: updatedBook._id,
         name: updatedBook.name,
@@ -547,7 +543,7 @@ class BookController {
         dateCreated: updatedBook.dateCreated,
         dateModified: updatedBook.dateModified,
         retrieveAllBooks: `${baseUrl}/books`,
-        retrieveBook: `${baseUrl}/book`,
+        retrieveBook: `${baseUrl}/books`,
       });
     } catch (error) {
       return res.status(500).json({
@@ -592,27 +588,20 @@ class BookController {
       }
 
       /**
-       * Validate the given bookshelf
-       */
-      const bookshelfId = req.body.bookshelfId;
-
-      if (!bookshelfId) {
-        return res.status(400).json({
-          error: 'Bookshelf can not be missing',
-        });
-      }
-      
-      const isBookshelf = await mongoDbClient
-        .verifyDocType(bookshelfId, 'bookshelf');
-      if (!isBookshelf) {
-        return res.status(404).json({
-          error: 'Bookshelf does not exist',
-        });
-      }
-
-      /**
        * Does the given user have access to the bookshelf
        */
+      const bookDoc = await mongoDbClient.findDoc(
+        {
+          _id: new ObjectId(bookId),
+        },
+        'book'
+      );
+      if (!bookDoc) {
+        return res.status(404).json({
+          error: 'Book not found',
+        });
+      }
+      const bookshelfId = bookDoc.bookshelfId;
       const userOwnsBookshelf = await Utils
       .ownsBookshelf(userData._id, bookshelfId);
 
@@ -623,62 +612,18 @@ class BookController {
       }
 
       /**
-       * Checks if category is given and validates it
+       * Checks if book is contained in a category and updates the category
        */
-      const categoryId = req.body.categoryId;
-      if (categoryId) {
-        const isCategory = await mongoDbClient
-          .verifyDocType(categoryId, 'category');
-
-        if (!isCategory) {
-          return res.status(400).json({
-            error: 'Invalid category id',
-          });
-        }
-
-        filter = {
-          _id: new ObjectId(bookId),
-          bookshelfId,
-          categoryId
-        };
-
-        const bookDoc = await bookCol.findOne(filter);
-        console.log(`bookDoc >> ${JSON.stringify(bookDoc)}`)
-
-        if (!bookDoc) {
-          return res.status(404).json({
-            error: 'Book not found',
-          });
-        }
-
-        categoryUsedInBook = categoryId;
-      } else {
-        const bookDoc = await bookCol
-          .findOne({ _id: new ObjectId(bookId),
-            bookshelfId
-           });
-
-        if (!bookDoc) {
-          return res.status(404).json({
-            error: 'Book not found',
-          });
-        }
-
-        filter = {
-          _id: new ObjectId(bookId),
-          bookshelfId,
-        };
-
-        categoryUsedInBook = bookDoc.categoryId;
-      }
-
-      const isDeleted = await bookCol.deleteOne(filter);
+      categoryUsedInBook = bookDoc.categoryId;
+      const isDeleted = await bookCol.deleteOne(
+        { _id: new ObjectId(bookId) },
+      );
       if (isDeleted.deletedCount < 1) {
         return res.status(500).json({
           error: 'Failed to delete',
         });
       }
-      if (isDeleted.deletedCount > 0) {
+      if (isDeleted.deletedCount > 0 && categoryUsedInBook !== null) {
         await Utils.updateCategoryBookCount(
           categoryUsedInBook, categoryUsedInBook, null
         );
